@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserType {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWING
+  ACCEPTED
+  REJECTED
+}
+
+enum ClassType {
+  INDIVIDUAL
+  GROUP
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  name          String?
+  type          UserType  @default(STUDENT)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  teacherProfile TeacherProfile?
+  studentProfile StudentProfile?
+  
+  applications   Application[]
+  payments       Payment[]
+}
+
+model TeacherProfile {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id])
+  
+  riwayatMastery        Json     // List of riwayat names
+  certificates          String[] // URL or hash of certificates
+  ijazahVerified        Boolean  @default(false)
+  hourlyRate            Float
+  availabilitySchedule  Json     // Map of availability
+  languages             String[]
+  maxStudents           Int      @default(10)
+  rating                Float    @default(0.0)
+  
+  classes               Class[]
+}
+
+model StudentProfile {
+  id                    String   @id @default(cuid())
+  userId                String    @unique
+  user                  User      @relation(fields: [userId], references: [id])
+  
+  currentLevel          String?
+  targetRiwayah         String?
+  placementTestResults  Json?
+  learningGoals         String[]
+  preferredSchedule     Json?
+  
+  classes               Class[]  @relation("StudentClasses")
+}
+
+model Application {
+  id            String            @id @default(cuid())
+  userId        String
+  user          User              @relation(fields: [userId], references: [id])
+  type          String            // "STUDENT" or "TEACHER"
+  status        ApplicationStatus @default(PENDING)
+  feePaid       Boolean           @default(false)
+  submittedData Json
+  reviewedBy    String?
+  decision      String?
+  createdAt     DateTime          @default(now())
+}
+
+model Class {
+  id                String    @id @default(cuid())
+  type              ClassType @default(INDIVIDUAL)
+  teacherId         String
+  teacher           TeacherProfile @relation(fields: [teacherId], references: [id])
+  students          StudentProfile[] @relation("StudentClasses")
+  
+  riwayah           String
+  level             String
+  schedule          Json
+  recurringPattern  String?
+  meetingLink       String?
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  amount          Float
+  status          String
+  gatewayResponse Json?
+  invoiceUrl      String?
+  createdAt       DateTime @default(now())
+}
+
+model Certificate {
+  id             String   @id @default(cuid())
+  studentName    String
+  teacherName    String
+  riwayah        String
+  completionDate DateTime
+  issuedDate     DateTime @default(now())
+  certificateHash String   @unique
+}
