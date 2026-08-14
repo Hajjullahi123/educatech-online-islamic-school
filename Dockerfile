@@ -1,16 +1,16 @@
-# Base Node.js image
-FROM node:20-alpine AS base
+# Base Node.js image (Debian Slim for rock-solid native modules & Prisma compatibility)
+FROM node:20-slim AS base
 
-# Install dependencies only when needed
+# Install OpenSSL and CA certificates for Prisma
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
+RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 COPY package.json package-lock.json ./
 COPY prisma ./prisma/
 RUN npm install
 
-# Rebuild the source code only when needed
+# Rebuild the source code
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
@@ -24,7 +24,7 @@ ENV NEXTAUTH_SECRET "educatech-build-time-secret-key-123456"
 RUN npx prisma generate
 RUN npm run build
 
-# Production image, copy all files and run next
+# Production image
 FROM base AS runner
 WORKDIR /app
 
@@ -34,8 +34,8 @@ ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
 # Create nextjs system user and permissions
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN groupadd --system --gid 1001 nodejs
+RUN useradd --system --uid 1001 nextjs
 RUN mkdir -p /app/prisma/data && chown -R nextjs:nodejs /app/prisma
 
 COPY --from=builder /app/public ./public
