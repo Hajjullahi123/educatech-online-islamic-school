@@ -3,39 +3,43 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-enum UserType {
-  STUDENT
-  TEACHER
-  ADMIN
-}
+model Organization {
+  id             String   @id @default(cuid())
+  name           String   // Custom School Name (e.g. "EducaTech Online Islamic School", "Al-Azhar Institute")
+  slug           String   @unique // URL Slug (e.g. "educatech", "al-azhar")
+  domain         String?  @unique // Custom Domain (e.g. "quran.alazhar.edu")
+  logoUrl        String?
+  primaryColor   String   @default("#064e3b")
+  secondaryColor String   @default("#d97706")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-enum ApplicationStatus {
-  PENDING
-  REVIEWING
-  ACCEPTED
-  REJECTED
-}
-
-enum ClassType {
-  INDIVIDUAL
-  GROUP
+  users        User[]
+  classes      Class[]
+  applications Application[]
+  payments     Payment[]
+  pricingPlans PricingPlan[]
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  passwordHash  String
-  name          String?
-  type          UserType  @default(STUDENT)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id             String    @id @default(cuid())
+  email          String    @unique
+  passwordHash   String
+  name           String?
+  type           String    @default("STUDENT") 
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 
   teacherProfile TeacherProfile?
   studentProfile StudentProfile?
+  parentProfile  ParentProfile?
   
   applications   Application[]
   payments       Payment[]
@@ -46,14 +50,15 @@ model TeacherProfile {
   userId                String   @unique
   user                  User     @relation(fields: [userId], references: [id])
   
-  riwayatMastery        Json     // List of riwayat names
-  certificates          String[] // URL or hash of certificates
+  riwayatMastery        String   @default("[]") // JSON String
+  certificates          String   @default("")   // Comma separated
   ijazahVerified        Boolean  @default(false)
   hourlyRate            Float
-  availabilitySchedule  Json     // Map of availability
-  languages             String[]
+  availabilitySchedule  String   @default("{}") // JSON String
+  languages             String   @default("")   // Comma separated
   maxStudents           Int      @default(10)
   rating                Float    @default(0.0)
+  bio                   String?
   
   classes               Class[]
 }
@@ -65,39 +70,96 @@ model StudentProfile {
   
   currentLevel          String?
   targetRiwayah         String?
-  placementTestResults  Json?
-  learningGoals         String[]
-  preferredSchedule     Json?
+  placementTestResults  String?  // JSON String
+  learningGoals         String   @default("") // Comma separated
+  preferredSchedule     String?  // JSON String
+  totalMinutes          Int      @default(0)
+
+  parentId              String?
+  parent                ParentProfile? @relation(fields: [parentId], references: [id])
   
   classes               Class[]  @relation("StudentClasses")
+  assessments           Assessment[]
+  attendance            Attendance[]
+  assignments           Assignment[]
+}
+
+model ParentProfile {
+  id        String           @id @default(cuid())
+  userId    String           @unique
+  user      User             @relation(fields: [userId], references: [id])
+  students  StudentProfile[]
+}
+
+model Assessment {
+  id           String         @id @default(cuid())
+  studentId    String
+  student      StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacherName  String
+  subject      String
+  tajweedScore Int
+  hifzScore    Int
+  fluencyScore Int
+  feedback     String
+  createdAt    DateTime       @default(now())
+}
+
+model Attendance {
+  id        String         @id @default(cuid())
+  classId   String
+  class     Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
+  studentId String
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status    String         // PRESENT, LATE, EXCUSED, ABSENT
+  date      DateTime       @default(now())
+}
+
+model Assignment {
+  id          String         @id @default(cuid())
+  studentId   String
+  student     StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  dueDate     DateTime
+  status      String         // PENDING, SUBMITTED, GRADED
+  audioUrl    String?
+  grade       String?
+  feedback    String?
+  createdAt   DateTime       @default(now())
 }
 
 model Application {
-  id            String            @id @default(cuid())
-  userId        String
-  user          User              @relation(fields: [userId], references: [id])
-  type          String            // "STUDENT" or "TEACHER"
-  status        ApplicationStatus @default(PENDING)
-  feePaid       Boolean           @default(false)
-  submittedData Json
-  reviewedBy    String?
-  decision      String?
-  createdAt     DateTime          @default(now())
+  id             String            @id @default(cuid())
+  userId         String
+  user           User              @relation(fields: [userId], references: [id])
+  organizationId String?
+  organization   Organization?     @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  type           String            // "STUDENT" or "TEACHER"
+  status         String            @default("PENDING")
+  feePaid        Boolean           @default(false)
+  submittedData  String            @default("{}") // JSON String
+  reviewedBy     String?
+  decision       String?
+  createdAt      DateTime          @default(now())
 }
 
 model Class {
   id                String    @id @default(cuid())
-  type              ClassType @default(INDIVIDUAL)
+  type              String    @default("INDIVIDUAL")
   teacherId         String
   teacher           TeacherProfile @relation(fields: [teacherId], references: [id])
   students          StudentProfile[] @relation("StudentClasses")
+  organizationId    String?
+  organization      Organization?  @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   
   riwayah           String
   level             String
-  schedule          Json
+  schedule          String    @default("{}") // JSON String
   recurringPattern  String?
   meetingLink       String?
   
+  attendance        Attendance[]
+
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 }
@@ -106,9 +168,11 @@ model Payment {
   id              String   @id @default(cuid())
   userId          String
   user            User     @relation(fields: [userId], references: [id])
+  organizationId  String?
+  organization    Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   amount          Float
   status          String
-  gatewayResponse Json?
+  gatewayResponse String?  // JSON String
   invoiceUrl      String?
   createdAt       DateTime @default(now())
 }
@@ -121,4 +185,17 @@ model Certificate {
   completionDate DateTime
   issuedDate     DateTime @default(now())
   certificateHash String   @unique
+}
+
+model PricingPlan {
+  id             String   @id @default(cuid())
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  name           String   @unique // "Foundation", "Specialization", "Hifz Intensive"
+  price          Float
+  period         String   @default("/month")
+  description    String
+  features       String   // JSON String array
+  isPopular      Boolean  @default(false)
+  updatedAt      DateTime @updatedAt
 }
