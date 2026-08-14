@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
-import DailyIframe, { DailyCall } from '@daily-co/daily-js';
-import { Video, Phone, ShieldAlert, Mic, MicOff, VideoOff, PhoneOff, Signal, Sparkles } from 'lucide-react';
+import { Video, Phone, ShieldAlert, Mic, MicOff, VideoOff, PhoneOff, Signal } from 'lucide-react';
 
 interface LiveVideoProps {
   isTeacher: boolean;
@@ -11,7 +10,7 @@ interface LiveVideoProps {
 
 const LiveVideo: React.FC<LiveVideoProps> = ({ isTeacher, roomUrl: initialRoomUrl }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [callObject, setCallObject] = useState<DailyCall | null>(null);
+  const [callObject, setCallObject] = useState<any>(null);
   const [roomUrl, setRoomUrl] = useState(initialRoomUrl || '');
   const [joined, setJoined] = useState(false);
   const [isDemoCall, setIsDemoCall] = useState(false);
@@ -35,6 +34,10 @@ const LiveVideo: React.FC<LiveVideoProps> = ({ isTeacher, roomUrl: initialRoomUr
     
     try {
       if (!containerRef.current) return;
+
+      // Dynamically import DailyIframe only in browser context
+      const DailyIframeModule = await import('@daily-co/daily-js');
+      const DailyIframe = DailyIframeModule.default;
 
       // Create a Daily.co iframe call frame
       const call = DailyIframe.createFrame(containerRef.current, {
@@ -130,7 +133,7 @@ const LiveVideo: React.FC<LiveVideoProps> = ({ isTeacher, roomUrl: initialRoomUr
           </div>
         </div>
       ) : isDemoCall ? (
-        /* GORGEOUS MOCK VIDEO CALL VIEW */
+        /* MOCK VIDEO CALL VIEW */
         <div className="flex-1 bg-slate-950 rounded-[2.5rem] p-6 shadow-2xl border-2 border-primary/15 flex flex-col justify-between relative overflow-hidden text-white min-h-[380px]">
           {/* Top Info Bar */}
           <div className="flex items-center justify-between z-10 shrink-0">
