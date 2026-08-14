@@ -18,8 +18,12 @@ COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV NODE_ENV production
+ENV DATABASE_URL "file:./dev.db"
+ENV NEXTAUTH_SECRET "educatech-build-time-secret-key-123456"
+ENV NEXTAUTH_URL "http://localhost:3000"
 
 RUN npx prisma generate
+RUN npx prisma db push
 RUN npm run build
 
 # Production image, copy all files and run next
