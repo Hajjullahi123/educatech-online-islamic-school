@@ -4,6 +4,8 @@ import { join } from 'path';
 import crypto from 'crypto';
 import { auth } from '@/auth';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user) {

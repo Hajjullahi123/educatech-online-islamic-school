@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import axios from 'axios';
 
+export const dynamic = 'force-dynamic';
+
 const DAILY_API_KEY = process.env.DAILY_API_KEY;
 
 export async function POST(req: Request) {

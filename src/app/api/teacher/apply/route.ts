@@ -4,6 +4,8 @@ import { z } from 'zod';
 import * as bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
+export const dynamic = 'force-dynamic';
+
 const teacherApplySchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters').max(100),
   email: z.string().email('Invalid email address'),
