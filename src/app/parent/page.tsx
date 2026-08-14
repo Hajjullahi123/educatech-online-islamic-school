@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+
+export const dynamic = 'force-dynamic';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Header from '@/components/dashboard/Header';
 import { Award, Bell, Clock, Calendar, CheckCircle2, DollarSign, Users, ShieldCheck, Download, GraduationCap } from 'lucide-react';
