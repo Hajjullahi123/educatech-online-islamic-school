@@ -1,9 +1,9 @@
 # Base Node.js image (Debian Slim for rock-solid native modules & Prisma compatibility)
 FROM node:20-slim AS base
-
-# Install OpenSSL and CA certificates for Prisma
-FROM base AS deps
 RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+
+# Install dependencies
+FROM base AS deps
 WORKDIR /app
 
 COPY package.json package-lock.json ./
@@ -16,10 +16,19 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Accept build arguments from Docker Compose / Coolify
+ARG COOLIFY_FQDN
+ARG NEXTAUTH_SECRET="educatech-build-time-secret-key-123456"
+ARG NEXTAUTH_URL="http://localhost:3000"
+ARG DATABASE_URL="file:./dev.db"
+ARG STRIPE_SECRET_KEY="sk_test_mock"
+
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV NODE_ENV production
-ENV DATABASE_URL "file:./dev.db"
-ENV NEXTAUTH_SECRET "educatech-build-time-secret-key-123456"
+ENV DATABASE_URL $DATABASE_URL
+ENV NEXTAUTH_SECRET $NEXTAUTH_SECRET
+ENV NEXTAUTH_URL $NEXTAUTH_URL
+ENV STRIPE_SECRET_KEY $STRIPE_SECRET_KEY
 
 RUN npx prisma generate
 RUN npm run build
@@ -31,6 +40,7 @@ WORKDIR /app
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV PORT 3000
+ENV SOCKET_PORT 3001
 ENV HOSTNAME "0.0.0.0"
 
 # Create nextjs system user and permissions

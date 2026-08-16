@@ -1,7 +1,7 @@
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.SOCKET_PORT || 3001;
 const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
