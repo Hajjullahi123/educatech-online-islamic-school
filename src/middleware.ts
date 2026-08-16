@@ -1,9 +1,12 @@
-import { auth } from "@/auth"
+import NextAuth from "next-auth"
+import { authConfig } from "@/auth.config"
 import { NextResponse } from "next/server"
+
+const { auth } = NextAuth(authConfig)
 
 export default auth((req) => {
   const isLoggedIn = !!req.auth
-  const userRole = req.auth?.user?.role
+  const userRole = (req.auth?.user as any)?.role
   const pathname = req.nextUrl.pathname
   const isAuthPage = pathname.startsWith("/auth")
   const isAdminPage = pathname.startsWith("/admin")

@@ -1,6 +1,7 @@
 # Base Node.js image (Debian Slim for rock-solid native modules & Prisma compatibility)
 FROM node:20-slim AS base
 RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
 
 # Install dependencies
 FROM base AS deps
@@ -25,12 +26,15 @@ ARG STRIPE_SECRET_KEY="sk_test_mock"
 
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV NODE_ENV production
+ENV NODE_OPTIONS="--max-old-space-size=2048"
 ENV DATABASE_URL $DATABASE_URL
 ENV NEXTAUTH_SECRET $NEXTAUTH_SECRET
 ENV NEXTAUTH_URL $NEXTAUTH_URL
 ENV STRIPE_SECRET_KEY $STRIPE_SECRET_KEY
 
+# Generate Prisma Client & initialize local database schema for build safety
 RUN npx prisma generate
+RUN npx prisma db push --accept-data-loss || true
 RUN npm run build
 
 # Production image
