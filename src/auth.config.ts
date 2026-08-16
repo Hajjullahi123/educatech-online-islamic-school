@@ -1,6 +1,8 @@
 import type { NextAuthConfig } from "next-auth"
 
 export const authConfig = {
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "educatech-secure-production-secret-key-998877",
+  trustHost: true,
   pages: {
     signIn: "/auth/login",
   },

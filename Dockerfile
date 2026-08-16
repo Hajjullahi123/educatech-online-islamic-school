@@ -19,18 +19,19 @@ COPY . .
 
 # Accept build arguments from Docker Compose / Coolify
 ARG COOLIFY_FQDN
-ARG NEXTAUTH_SECRET="educatech-build-time-secret-key-123456"
-ARG NEXTAUTH_URL="http://localhost:3000"
-ARG DATABASE_URL="file:./dev.db"
-ARG STRIPE_SECRET_KEY="sk_test_mock"
+ARG NEXTAUTH_SECRET
+ARG NEXTAUTH_URL
+ARG DATABASE_URL
+ARG STRIPE_SECRET_KEY
 
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV NODE_ENV production
 ENV NODE_OPTIONS="--max-old-space-size=2048"
-ENV DATABASE_URL $DATABASE_URL
-ENV NEXTAUTH_SECRET $NEXTAUTH_SECRET
-ENV NEXTAUTH_URL $NEXTAUTH_URL
-ENV STRIPE_SECRET_KEY $STRIPE_SECRET_KEY
+ENV AUTH_SECRET="educatech-build-time-secret-key-123456"
+ENV NEXTAUTH_SECRET="educatech-build-time-secret-key-123456"
+ENV NEXTAUTH_URL="http://localhost:3000"
+ENV DATABASE_URL="file:./dev.db"
+ENV STRIPE_SECRET_KEY="sk_test_mock"
 
 # Generate Prisma Client & initialize local database schema for build safety
 RUN npx prisma generate
