@@ -6,14 +6,16 @@ WORKDIR /app
 # Install dependencies
 FROM base AS deps
 WORKDIR /app
+ENV NODE_ENV=development
 
 COPY package.json package-lock.json ./
 COPY prisma ./prisma/
-RUN npm install
+RUN npm install --include=dev
 
 # Rebuild the source code
 FROM base AS builder
 WORKDIR /app
+ENV NODE_ENV=development
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
@@ -24,8 +26,7 @@ ARG NEXTAUTH_URL
 ARG DATABASE_URL
 ARG STRIPE_SECRET_KEY
 
-ENV NEXT_TELEMETRY_DISABLED 1
-ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_OPTIONS="--max-old-space-size=2048"
 ENV AUTH_SECRET="educatech-build-time-secret-key-123456"
 ENV NEXTAUTH_SECRET="educatech-build-time-secret-key-123456"
@@ -42,11 +43,11 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
-ENV PORT 3000
-ENV SOCKET_PORT 3001
-ENV HOSTNAME "0.0.0.0"
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV SOCKET_PORT=3001
+ENV HOSTNAME="0.0.0.0"
 
 # Create nextjs system user and permissions
 RUN groupadd --system --gid 1001 nodejs
