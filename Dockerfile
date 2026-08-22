@@ -15,7 +15,7 @@ RUN npm install --include=dev
 # Rebuild the source code
 FROM base AS builder
 WORKDIR /app
-ENV NODE_ENV=development
+ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
