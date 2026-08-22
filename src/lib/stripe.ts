@@ -1,12 +1,10 @@
 import Stripe from 'stripe';
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY environment variable is required');
-}
+const apiKey = process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder_key_for_mock_mode';
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+export const stripe = new Stripe(apiKey, {
   appInfo: {
-    name: 'EducaTech Quran Academy Platform',
+    name: 'Al-Huda Quran Academy Platform',
     version: '1.0.0',
   },
 });
