@@ -13,7 +13,8 @@ import {
   MessageSquare,
   Settings2,
   Users,
-  GraduationCap
+  GraduationCap,
+  School
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -37,6 +38,7 @@ const Sidebar: React.FC<SidebarProps> = ({ userType }) => {
     { name: 'Achievements', icon: Award, path: '/dashboard/achievements', roles: ['STUDENT'] },
     { name: 'Students', icon: Users, path: '/admin/students', roles: ['ADMIN'] },
     { name: 'Teachers', icon: GraduationCap, path: '/admin/teachers', roles: ['ADMIN'] },
+    { name: 'Register School', icon: School, path: '/register-school', roles: ['ADMIN'] },
     { name: 'Applications', icon: ClipboardList, path: '/admin/applications', roles: ['ADMIN'] },
     { name: 'Financial Ledger', icon: DollarSign, path: '/admin/finances', roles: ['ADMIN'] },
     { name: 'Dynamic Pricing', icon: Settings2, path: '/admin/pricing', roles: ['ADMIN'] },

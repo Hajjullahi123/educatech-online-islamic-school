@@ -16,7 +16,8 @@ import {
   XCircle,
   MessageCircle,
   TrendingUp,
-  LayoutDashboard
+  LayoutDashboard,
+  School
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -55,18 +56,18 @@ export default async function AdminDashboard() {
 
         <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 custom-scrollbar">
           {/* Executive Overview */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <h1 className="text-3xl font-black text-slate-900">AdminHub Console</h1>
               <p className="text-slate-500 font-medium">Academy performance and oversight dashboard.</p>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex -space-x-3">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="w-10 h-10 rounded-full border-4 border-white bg-slate-200" />
-                ))}
-              </div>
-              <span className="text-xs font-bold text-slate-400">4 Admins Online</span>
+              <Link
+                href="/register-school"
+                className="flex items-center gap-2 bg-emerald-700 text-white px-5 py-3 rounded-2xl text-xs font-black shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 transition-all"
+              >
+                <School className="w-4 h-4" /> Register New School
+              </Link>
             </div>
           </div>
 

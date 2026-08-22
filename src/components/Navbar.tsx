@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Menu, X, BookOpen, GraduationCap, Users, Globe, School } from 'lucide-react';
+import { Menu, X, BookOpen, GraduationCap, Users, Globe, LayoutDashboard, LogOut } from 'lucide-react';
 import { useTenant } from '@/context/TenantContext';
+import { useSession, signOut } from 'next-auth/react';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { tenant, isMasterSaaS } = useTenant();
+  const { tenant } = useTenant();
+  const { data: session } = useSession();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -26,6 +28,14 @@ const Navbar = () => {
     { name: 'Pricing', href: '#pricing', icon: Globe },
   ];
 
+  const getDashboardPath = () => {
+    const role = (session?.user as any)?.role;
+    if (role === 'ADMIN') return '/admin';
+    if (role === 'TEACHER') return '/teacher';
+    if (role === 'PARENT') return '/parent';
+    return '/dashboard';
+  };
+
   return (
     <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'glass py-3' : 'bg-transparent py-5'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -42,7 +52,7 @@ const Navbar = () => {
                 {tenant.name}
               </span>
               <span className="text-[10px] uppercase tracking-[2px] opacity-70 font-semibold text-emerald-700">
-                {isMasterSaaS ? 'Multi-Tenant SaaS Engine' : 'White-Label Academy Tenant'}
+                Online Academy Portal
               </span>
             </div>
           </Link>
@@ -59,26 +69,33 @@ const Navbar = () => {
               </Link>
             ))}
 
-            <Link
-              href="/register-school"
-              className="flex items-center gap-1.5 text-xs font-bold text-slate-800 hover:text-emerald-700 border border-slate-300 px-4 py-2 rounded-full hover:bg-slate-50 transition-all"
-            >
-              <School className="w-3.5 h-3.5 text-emerald-600" />
-              Register School
-            </Link>
-
-            <Link
-              href="/auth/login"
-              className="text-xs font-bold text-emerald-700 hover:opacity-80 transition-all border border-emerald-600/30 px-5 py-2.5 rounded-full"
-            >
-              Login
-            </Link>
-            <Link
-              href="/apply"
-              className="bg-emerald-700 text-white text-xs px-5 py-2.5 rounded-full font-bold hover:bg-emerald-800 transition-all duration-300 shadow-md hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              Enroll Student
-            </Link>
+            {session?.user ? (
+              <div className="flex items-center gap-3 pl-2">
+                <Link
+                  href={getDashboardPath()}
+                  className="flex items-center gap-1.5 bg-emerald-700 text-white text-xs px-5 py-2.5 rounded-full font-bold hover:bg-emerald-800 transition-all duration-300 shadow-md hover:shadow-xl transform hover:-translate-y-0.5"
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5" />
+                  Dashboard
+                </Link>
+                <button
+                  onClick={() => signOut()}
+                  className="text-xs font-bold text-slate-500 hover:text-rose-600 border border-slate-200 px-4 py-2.5 rounded-full hover:bg-slate-50 transition-all"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 pl-2">
+                <Link
+                  href="/auth/login"
+                  className="bg-emerald-700 text-white text-xs px-6 py-2.5 rounded-full font-bold hover:bg-emerald-800 transition-all duration-300 shadow-md hover:shadow-xl transform hover:-translate-y-0.5"
+                >
+                  Login
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -108,27 +125,35 @@ const Navbar = () => {
             </Link>
           ))}
           <div className="pt-4 px-3 space-y-3">
-            <Link
-              href="/register-school"
-              className="block w-full text-center border border-emerald-600 text-emerald-700 px-6 py-3 rounded-xl font-bold hover:bg-emerald-50 transition-all duration-200"
-              onClick={() => setIsOpen(false)}
-            >
-              Register Your School
-            </Link>
-            <Link
-              href="/auth/login"
-              className="block w-full text-center border border-slate-300 text-slate-700 px-6 py-3 rounded-xl font-bold hover:bg-slate-50 transition-all duration-200"
-              onClick={() => setIsOpen(false)}
-            >
-              Login to Account
-            </Link>
-            <Link
-              href="/apply"
-              className="block w-full text-center bg-emerald-700 text-white px-6 py-3 rounded-xl font-semibold hover:bg-emerald-800 transition-all duration-200"
-              onClick={() => setIsOpen(false)}
-            >
-              Enroll Now
-            </Link>
+            {session?.user ? (
+              <>
+                <Link
+                  href={getDashboardPath()}
+                  className="flex items-center justify-center gap-2 w-full text-center bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-800 transition-all duration-200"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  Access Dashboard
+                </Link>
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    signOut();
+                  }}
+                  className="w-full text-center border border-rose-200 text-rose-600 px-6 py-3 rounded-xl font-bold hover:bg-rose-50 transition-all duration-200"
+                >
+                  Log Out
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/auth/login"
+                className="block w-full text-center bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-800 transition-all duration-200"
+                onClick={() => setIsOpen(false)}
+              >
+                Login to Portal
+              </Link>
+            )}
           </div>
         </div>
       </div>
