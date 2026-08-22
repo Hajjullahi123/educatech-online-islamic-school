@@ -111,25 +111,25 @@ const Navbar = () => {
       </div>
 
       {/* Mobile Nav */}
-      <div className={`md:hidden absolute w-full transition-all duration-300 ease-in-out ${isOpen ? 'top-full opacity-100' : '-top-[500px] opacity-0'} glass`}>
-        <div className="px-4 pt-2 pb-6 space-y-1 sm:px-3">
+      <div className={`md:hidden absolute w-full left-0 right-0 transition-all duration-300 ease-in-out ${isOpen ? 'top-full opacity-100 visible' : '-top-[500px] opacity-0 invisible pointer-events-none'} bg-white/98 backdrop-blur-xl border-b border-slate-200/80 shadow-2xl`}>
+        <div className="px-5 pt-3 pb-6 space-y-1">
           {navLinks.map((link) => (
             <Link
               key={link.name}
               href={link.href}
-              className="flex items-center gap-3 px-3 py-4 rounded-md text-base font-medium hover:bg-primary/10 transition-colors duration-200"
+              className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold text-slate-800 hover:bg-emerald-50 hover:text-emerald-800 transition-colors duration-200"
               onClick={() => setIsOpen(false)}
             >
-              <link.icon className="w-5 h-5 text-primary" />
+              <link.icon className="w-4 h-4 text-emerald-700" />
               {link.name}
             </Link>
           ))}
-          <div className="pt-4 px-3 space-y-3">
+          <div className="pt-3 px-1 space-y-2.5">
             {session?.user ? (
               <>
                 <Link
                   href={getDashboardPath()}
-                  className="flex items-center justify-center gap-2 w-full text-center bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-800 transition-all duration-200"
+                  className="flex items-center justify-center gap-2 w-full text-center bg-emerald-700 text-white px-6 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider hover:bg-emerald-800 transition-all duration-200 shadow-md shadow-emerald-700/20"
                   onClick={() => setIsOpen(false)}
                 >
                   <LayoutDashboard className="w-4 h-4" />
@@ -140,7 +140,7 @@ const Navbar = () => {
                     setIsOpen(false);
                     signOut();
                   }}
-                  className="w-full text-center border border-rose-200 text-rose-600 px-6 py-3 rounded-xl font-bold hover:bg-rose-50 transition-all duration-200"
+                  className="w-full text-center border border-rose-200 text-rose-600 px-6 py-3 rounded-2xl text-xs font-bold hover:bg-rose-50 transition-all duration-200"
                 >
                   Log Out
                 </button>
@@ -148,7 +148,7 @@ const Navbar = () => {
             ) : (
               <Link
                 href="/auth/login"
-                className="block w-full text-center bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-800 transition-all duration-200"
+                className="block w-full text-center bg-emerald-700 text-white px-6 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider hover:bg-emerald-800 transition-all duration-200 shadow-md shadow-emerald-700/20"
                 onClick={() => setIsOpen(false)}
               >
                 Login to Portal
