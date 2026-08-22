@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Header from '@/components/dashboard/Header';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTenant } from '@/context/TenantContext';
 import {
   Award,
   Download,
@@ -23,30 +24,30 @@ interface Certificate {
   id: string;
   riwayah: string;
   teacher: string;
+  student: string;
   date: string;
-  status: string;
   grade: string;
   hash: string;
 }
 
 const mockCertificates: Certificate[] = [
   {
-    id: 'cert_1',
-    riwayah: 'Riwayah Hafs an Asim',
-    teacher: 'Sheikh Omar Al-Faruq',
-    date: 'December 12, 2025',
-    status: 'COMPLETED',
-    grade: 'Mumtaz (Excellent)',
-    hash: '8f2e7b8a9c4d2e1f'
+    id: 'CERT-90412',
+    riwayah: 'Hafs an Asim (Shatibiyyah)',
+    teacher: 'Sheikh Ibrahim Al-Mansoor',
+    student: 'Muhammad Abdullahi',
+    date: '15 Aug 2026',
+    grade: 'Mumtaz (98%)',
+    hash: '0x8f2a...4b12'
   },
   {
-    id: 'cert_2',
-    riwayah: 'Juz Amma Completion',
-    teacher: 'Ustadha Fatima Zahra',
-    date: 'October 20, 2025',
-    status: 'COMPLETED',
-    grade: 'MashaAllah',
-    hash: '3d1a6b7c2e8f9a4d'
+    id: 'CERT-80321',
+    riwayah: 'Warsh an Nafi (Azraq)',
+    teacher: 'Ustadha Fatima Al-Zahra',
+    student: 'Muhammad Abdullahi',
+    date: '10 Jan 2026',
+    grade: 'Jayyid Jiddan (92%)',
+    hash: '0x3c1d...9e44'
   }
 ];
 
@@ -57,6 +58,7 @@ const mockBadges = [
 ];
 
 export default function AchievementsPage() {
+  const { tenant } = useTenant();
   const [selectedCert, setSelectedCert] = useState<Certificate | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -212,7 +214,7 @@ export default function AchievementsPage() {
                 <div className="space-y-2">
                   <span className="text-3xl">🕌</span>
                   <h2 className="text-amber-600 font-extrabold text-2xl tracking-widest uppercase" style={{ fontFamily: 'var(--font-amiri)' }}>
-                    Al-Qalam Quran Academy
+                    {tenant.name}
                   </h2>
                   <p className="text-[10px] uppercase tracking-widest font-black text-slate-400">Academy of Classical Recitation & Ijazah</p>
                 </div>

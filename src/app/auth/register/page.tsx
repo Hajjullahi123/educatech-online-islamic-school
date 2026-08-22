@@ -6,6 +6,7 @@ import { BookOpen, Mail, Lock, User, ArrowRight, UserCheck, CheckCircle2 } from 
 import { motion } from 'framer-motion';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useTenant } from '@/context/TenantContext';
 
 const RegisterPage = () => {
   const [loading, setLoading] = useState(false);
@@ -13,6 +14,7 @@ const RegisterPage = () => {
   const [success, setSuccess] = useState(false);
   const [type, setType] = useState<'STUDENT' | 'TEACHER'>('STUDENT');
   const router = useRouter();
+  const { tenant } = useTenant();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,11 +94,14 @@ const RegisterPage = () => {
       >
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-6 group">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300"
+              style={{ backgroundColor: tenant.primaryColor }}
+            >
               <BookOpen className="text-white w-6 h-6" />
             </div>
-            <span className="text-xl font-bold tracking-tight">
-              Al-Qalam <span className="text-secondary">Academy</span>
+            <span className="text-xl font-bold tracking-tight text-slate-900">
+              {tenant.name}
             </span>
           </Link>
           <h1 className="text-3xl font-black mb-2">Create Account</h1>

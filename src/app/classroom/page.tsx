@@ -16,12 +16,14 @@ import {
   Award
 } from 'lucide-react';
 import Link from 'next/link';
+import { useTenant } from '@/context/TenantContext';
 
 // Components
 import QuranSync from '@/components/classroom/QuranSync';
 import LiveVideo from '@/components/classroom/LiveVideo';
 
 const Classroom = () => {
+  const { tenant } = useTenant();
   const [activeTab, setActiveTab] = useState<'CHAT' | 'NOTES' | 'SETTINGS'>('CHAT');
   const [isTeacher, setIsTeacher] = useState(false); // Can be toggled for demo
   const [syncState, setSyncState] = useState({ surah: 1, verse: 1, highlight: null });
@@ -55,13 +57,16 @@ const Classroom = () => {
       {/* Classroom Header */}
       <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between z-10 shrink-0">
         <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform">
-              <BookOpen className="text-white w-6 h-6" />
+          <Link href="/dashboard" className="flex items-center gap-2.5 group">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform text-white"
+              style={{ backgroundColor: tenant.primaryColor }}
+            >
+              <BookOpen className="w-6 h-6" />
             </div>
             <div className="hidden md:block">
-              <h1 className="font-black text-lg leading-none">Al-Qalam <span className="text-secondary">Studio</span></h1>
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mt-1">Live Hifz Session #9012</p>
+              <h1 className="font-black text-lg leading-none text-slate-900">{tenant.name} <span className="text-secondary">Studio</span></h1>
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mt-1">Live Virtual Classroom</p>
             </div>
           </Link>
 

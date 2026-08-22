@@ -19,6 +19,7 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
+import { useTenant } from '@/context/TenantContext';
 
 interface SidebarProps {
   userType: 'STUDENT' | 'TEACHER' | 'ADMIN' | 'PARENT';
@@ -26,6 +27,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ userType }) => {
   const pathname = usePathname();
+  const { tenant } = useTenant();
 
   const menuItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: userType === 'STUDENT' ? '/dashboard' : (userType === 'ADMIN' ? '/admin' : (userType === 'TEACHER' ? '/teacher' : '/parent')) },
@@ -47,12 +49,22 @@ const Sidebar: React.FC<SidebarProps> = ({ userType }) => {
 
   return (
     <aside className="w-72 bg-white border-r border-slate-100 hidden lg:flex flex-col h-screen shrink-0 relative z-20">
-      <div className="p-8">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white">
+      <div className="p-8 pb-4">
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform shrink-0"
+            style={{ backgroundColor: tenant.primaryColor }}
+          >
             <BookOpen className="w-5 h-5" />
           </div>
-          <span className="font-black text-xl tracking-tighter text-primary">AL-QALAM</span>
+          <div className="flex flex-col min-w-0">
+            <span className="font-extrabold text-sm tracking-tight text-slate-900 truncate">
+              {tenant.name}
+            </span>
+            <span className="text-[9px] uppercase tracking-widest text-emerald-700 font-bold">
+              Portal
+            </span>
+          </div>
         </Link>
       </div>
 

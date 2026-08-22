@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { FileText, Printer, CheckCircle, Search, DollarSign, Calendar, Mail, FileCheck, Landmark } from 'lucide-react';
+import { useTenant } from '@/context/TenantContext';
 
 interface InvoiceData {
   id: string;
@@ -21,6 +22,7 @@ interface AdminInvoicesClientProps {
 }
 
 const AdminInvoicesClient: React.FC<AdminInvoicesClientProps> = ({ invoices }) => {
+  const { tenant } = useTenant();
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceData | null>(invoices[0] || null);
   const [searchTerm, setSearchTerm] = useState<string>('');
 
@@ -148,25 +150,27 @@ const AdminInvoicesClient: React.FC<AdminInvoicesClientProps> = ({ invoices }) =
                 <div className="absolute right-10 top-10 border-4 border-amber-500/30 text-amber-600 rounded-full w-24 h-24 flex flex-col justify-center items-center font-black rotate-12 bg-amber-50/50 backdrop-blur-sm border-dashed select-none print:right-4 print:top-4">
                   <span className="text-[8px] uppercase tracking-widest text-amber-500/80 font-bold">Official</span>
                   <span className="text-xs uppercase font-black tracking-widest text-amber-700">VERIFIED</span>
-                  <span className="text-[7px] uppercase tracking-widest text-amber-500/80 font-bold">Al-Qalam</span>
+                  <span className="text-[7px] uppercase tracking-widest text-amber-500/80 font-bold truncate max-w-[80px]">{tenant.name}</span>
                 </div>
               )}
 
               {/* Invoice Layout Header */}
               <div className="border-b-2 border-slate-100 pb-8 space-y-6">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center text-white">
+                  <div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center text-white"
+                    style={{ backgroundColor: tenant.primaryColor }}
+                  >
                     <FileCheck className="w-5 h-5" />
                   </div>
-                  <span className="font-black text-xl tracking-tighter text-primary">AL-QALAM ACADEMY</span>
+                  <span className="font-black text-xl tracking-tight text-slate-900 uppercase">{tenant.name}</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-slate-500">
                   <div>
-                    <p className="text-slate-800 font-black">Al-Qalam Online School</p>
-                    <p>100 Al-Noor Boulevard</p>
-                    <p>Madinah, Saudi Arabia</p>
-                    <p>support@alqalam.com</p>
+                    <p className="text-slate-800 font-black">{tenant.name}</p>
+                    <p>Digital Academic Operations</p>
+                    <p>support@educatech.org</p>
                   </div>
                   <div className="text-right">
                     <p className="text-slate-800 font-black text-sm uppercase tracking-wider">Tuition Invoice Statement</p>
@@ -207,7 +211,7 @@ const AdminInvoicesClient: React.FC<AdminInvoicesClientProps> = ({ invoices }) =
                   <tbody>
                     <tr className="border-b border-slate-50 hover:bg-slate-50/20">
                       <td className="px-4 py-6">
-                        <p className="font-bold text-slate-800">Al-Qalam Quranic School Tuition Fee</p>
+                        <p className="font-bold text-slate-800">{tenant.name} Tuition Fee</p>
                         <p className="text-[10px] text-slate-400 font-medium mt-1">Full Term enrollment - Track: {selectedInvoice.track}</p>
                       </td>
                       <td className="px-4 py-6 text-center text-slate-500">1</td>
@@ -239,7 +243,7 @@ const AdminInvoicesClient: React.FC<AdminInvoicesClientProps> = ({ invoices }) =
               {/* Footer Stamp */}
               <div className="border-t border-slate-100 pt-8 text-center text-[10px] font-medium text-slate-400 leading-relaxed">
                 <p>This is a computer-generated official receipt verified secure via Stripe Gateway.</p>
-                <p className="mt-1">Thank you for partnering with Al-Qalam Quranic School. May Allah bless your learning and recitation journey.</p>
+                <p className="mt-1">Thank you for partnering with {tenant.name}. May Allah bless your learning and recitation journey.</p>
               </div>
             </div>
           </div>

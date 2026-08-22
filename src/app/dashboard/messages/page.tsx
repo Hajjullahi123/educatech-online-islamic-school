@@ -46,7 +46,7 @@ const initialChats: Chat[] = [
   },
   {
     id: 'chat_2',
-    name: 'Al-Qalam Academic Support',
+    name: 'Academy Academic Support',
     role: 'Helpdesk Operations',
     avatar: '🎓',
     lastMessage: 'Your payment for the Specialization Plan has been processed.',
@@ -54,7 +54,7 @@ const initialChats: Chat[] = [
     unreadCount: 0,
     online: false,
     messages: [
-      { id: '1', sender: 'support', text: 'Welcome to Al-Qalam Quran Academy! Let us know if you need help scheduling classes.', timestamp: 'Yesterday', status: 'read' },
+      { id: '1', sender: 'support', text: 'Welcome to your Online Quran Academy! Let us know if you need help scheduling classes.', timestamp: 'Yesterday', status: 'read' },
       { id: '2', sender: 'student', text: 'Thank you, I completed my placement test.', timestamp: 'Yesterday', status: 'read' },
       { id: '3', sender: 'support', text: 'MashaAllah, we see that. Your payment for the Specialization Plan has been processed.', timestamp: 'Yesterday', status: 'read' }
     ]

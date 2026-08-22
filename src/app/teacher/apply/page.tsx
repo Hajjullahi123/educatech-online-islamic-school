@@ -18,8 +18,10 @@ import {
   AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
+import { useTenant } from '@/context/TenantContext';
 
 const TeacherRecruitment = () => {
+  const { tenant } = useTenant();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -127,7 +129,7 @@ const TeacherRecruitment = () => {
               Empower the Next Generation of <span className="text-gradient">Quranic Reciters</span>
             </h1>
             <p className="text-lg text-foreground/60 max-w-2xl mx-auto leading-relaxed font-medium">
-              Al-Qalam Academy is looking for qualified teachers with verified Ijazah to join our global platform. Teach from anywhere, set your own rates, and impact thousands.
+              {tenant.name} is looking for qualified teachers with verified Ijazah to join our global platform. Teach from anywhere, set your own rates, and impact thousands.
             </p>
             <div className="flex justify-center gap-6 pt-6">
               <div className="flex flex-col items-center">
@@ -387,7 +389,7 @@ const TeacherRecruitment = () => {
               { title: 'Global Reach', desc: 'Connect with students from over 40 countries seeking authentic Riwayah.', icon: Globe },
               { title: 'Secure Payments', desc: 'Automated weekly payouts directly to your local bank or Islamic account.', icon: ShieldCheck },
               { title: 'Flexible Schedule', desc: 'Manage your teaching hours through our advanced timezone-synced calendar.', icon: Clock },
-              { title: 'Certification Power', desc: 'Issue recognized Al-Qalam certificates backed by our Shariah board.', icon: Award },
+              { title: 'Certification Power', desc: `Issue recognized ${tenant.name} certificates backed by our Shariah board.`, icon: Award },
             ].map((benefit, i) => (
               <div key={i} className="space-y-4">
                 <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center text-primary-light border border-white/10">
@@ -403,7 +405,7 @@ const TeacherRecruitment = () => {
 
       {/* Footer */}
       <footer className="py-12 text-center opacity-30 text-xs font-black uppercase tracking-widest text-slate-400">
-        &copy; 2026 Al-Qalam Quran Academy • Teacher Services Division
+        &copy; 2026 {tenant.name} • Teacher Services Division
       </footer>
     </main>
   );

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'alqalam-pwa-v1';
+const CACHE_NAME = 'school-pwa-v2';
 const OFFLINE_URL = '/offline.html';
 
 const ASSETS_TO_CACHE = [

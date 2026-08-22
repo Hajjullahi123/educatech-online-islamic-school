@@ -14,6 +14,7 @@ import {
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useTenant } from '@/context/TenantContext';
 
 interface PricingPlan {
   id: string;
@@ -28,6 +29,7 @@ interface PricingPlan {
 const CheckoutPage = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { tenant } = useTenant();
   const [selectedMethod, setSelectedMethod] = useState('card');
   const [loading, setLoading] = useState(false);
   const [plan, setPlan] = useState<PricingPlan | null>(null);
@@ -120,9 +122,14 @@ const CheckoutPage = () => {
   return (
     <div className="min-h-screen bg-[#FDFDFD] flex flex-col">
       <nav className="p-8 border-b border-slate-100 flex items-center justify-between bg-white text-primary">
-        <Link href="/" className="flex items-center gap-2 group">
-          <BookOpen className="w-8 h-8 group-hover:rotate-12 transition-transform" />
-          <span className="font-black text-xl uppercase tracking-tighter">Al-Qalam</span>
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+            style={{ backgroundColor: tenant.primaryColor }}
+          >
+            <BookOpen className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+          </div>
+          <span className="font-black text-xl uppercase tracking-tight text-slate-900">{tenant.name}</span>
         </Link>
         <div className="flex items-center gap-4 text-xs font-black uppercase tracking-widest opacity-40">
           <ShieldCheck className="w-4 h-4" /> Secure SSL Checkout
@@ -290,7 +297,7 @@ const CheckoutPage = () => {
                 <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" className="h-6 grayscale" alt="Mastercard" />
                 <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" className="h-5 grayscale" alt="PayPal" />
               </div>
-              <p className="text-[9px] font-black uppercase tracking-[5px]">Al-Qalam Financial Systems</p>
+              <p className="text-[9px] font-black uppercase tracking-[5px]">{tenant.name} Financial Systems</p>
             </div>
           </div>
         </main>

@@ -16,7 +16,7 @@ export const useClassroomSync = (isTeacher: boolean, initialSync: SyncData) => {
   useEffect(() => {
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
     
-    console.log(`Connecting to Al-Qalam Sync Engine at ${socketUrl} as ${isTeacher ? 'Teacher' : 'Student'}...`);
+    console.log(`Connecting to Classroom Sync Engine at ${socketUrl} as ${isTeacher ? 'Teacher' : 'Student'}...`);
 
     const socket = io(socketUrl, {
       autoConnect: true,

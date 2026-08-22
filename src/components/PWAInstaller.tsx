@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Download, X, Smartphone, CheckCircle } from 'lucide-react';
+import { useTenant } from '@/context/TenantContext';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -9,6 +10,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export default function PWAInstaller() {
+  const { tenant } = useTenant();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showBanner, setShowBanner] = useState<boolean>(false);
   const [isInstalled, setIsInstalled] = useState<boolean>(false);
@@ -38,7 +40,7 @@ export default function PWAInstaller() {
     const handleAppInstalled = () => {
       setIsInstalled(true);
       setShowBanner(false);
-      console.log('[PWA] Al-Qalam Academy installed successfully!');
+      console.log('[PWA] Academy App installed successfully!');
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -72,13 +74,13 @@ export default function PWAInstaller() {
           </div>
           <div>
             <h4 className="font-bold text-sm text-slate-100 flex items-center gap-1.5">
-              Install Al-Qalam App
+              Install {tenant.name} App
               <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30 font-medium">
                 PWA
               </span>
             </h4>
             <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
-              Install Al-Qalam on your home screen for quick offline access and instant classroom sessions.
+              Install {tenant.name} on your home screen for quick offline access and instant classroom sessions.
             </p>
           </div>
         </div>

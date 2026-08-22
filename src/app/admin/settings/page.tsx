@@ -9,7 +9,7 @@ import { Save, Shield, Settings, Server, Database, Check, AlertTriangle, Eye } f
 export default function AdminSettingsPage() {
   const [profile, setProfile] = useState({
     name: 'Admin Manager',
-    email: 'admin@alqalam.com',
+    email: 'admin@educatech.org',
     role: 'SUPER_ADMIN'
   });
 
@@ -163,7 +163,7 @@ export default function AdminSettingsPage() {
                     <div className="p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-2xl text-center space-y-2">
                       <Check className="w-6 h-6 text-emerald-600 mx-auto" />
                       <p className="text-xs font-black uppercase tracking-wide">Backup Download Ready</p>
-                      <p className="text-[9px] text-emerald-600/60 font-bold">alqalam_backup_db.sql (4.8MB)</p>
+                      <p className="text-[9px] text-emerald-600/60 font-bold">educatech_backup_db.sql (4.8MB)</p>
                     </div>
                   )}
                 </div>

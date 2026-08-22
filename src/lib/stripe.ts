@@ -6,7 +6,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   appInfo: {
-    name: 'Al-Qalam Quran Academy',
+    name: 'EducaTech Quran Academy Platform',
     version: '1.0.0',
   },
 });

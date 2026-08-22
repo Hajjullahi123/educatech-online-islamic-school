@@ -9,7 +9,7 @@ import { Save, User, Clock, Check, Calendar, Plus, Trash2 } from 'lucide-react';
 export default function TeacherSettingsPage() {
   const [profile, setProfile] = useState({
     name: 'Sheikh Ibrahim',
-    email: 'teacher@alqalam.com',
+    email: 'teacher@educatech.org',
     hourlyRate: 25,
     bio: 'Senior reciter with 20 years of experience teaching global students.',
     certificates: 'Ijazah in Ten Qiraat, PhD in Islamic Studies'

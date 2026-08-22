@@ -7,11 +7,13 @@ import { motion } from 'framer-motion';
 
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useTenant } from '@/context/TenantContext';
 
 const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const { tenant } = useTenant();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,11 +64,14 @@ const LoginPage = () => {
       >
         <div className="text-center mb-10">
           <Link href="/" className="inline-flex items-center gap-2 mb-6 group">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300"
+              style={{ backgroundColor: tenant.primaryColor }}
+            >
               <BookOpen className="text-white w-6 h-6" />
             </div>
-            <span className="text-xl font-bold tracking-tight">
-              Al-Qalam <span className="text-secondary">Academy</span>
+            <span className="text-xl font-bold tracking-tight text-slate-900">
+              {tenant.name}
             </span>
           </Link>
           <h1 className="text-3xl font-black mb-2">Welcome Back</h1>
@@ -115,7 +120,7 @@ const LoginPage = () => {
 
         <div className="mt-8 pt-8 border-t border-border">
           <p className="text-center text-sm text-foreground/50 font-medium">
-            New to Al-Qalam? <Link href="/apply" className="text-primary font-bold hover:underline">Apply as a Student</Link>
+            New to {tenant.name}? <Link href="/apply" className="text-primary font-bold hover:underline">Apply as a Student</Link>
           </p>
         </div>
       </motion.div>

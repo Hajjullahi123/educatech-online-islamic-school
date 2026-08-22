@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     // Fall back to simulation if API key is not present in local dev
     if (!DAILY_API_KEY) {
       console.warn('DAILY_API_KEY is not set. Falling back to simulated room credentials.');
-      const mockRoomUrl = `https://alqalam.daily.co/${roomName || 'demo-room'}`;
+      const mockRoomUrl = `https://educatech.daily.co/${roomName || 'demo-room'}`;
       const mockToken = 'simulated_daily_token_' + Math.random().toString(36).substring(7);
       return NextResponse.json({
         url: mockRoomUrl,
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
     } catch (roomError: any) {
       // If the room already exists, Daily.co returns 400. In this case, construct the URL.
       if (roomError.response?.status === 400 && roomError.response?.data?.info?.includes('already exists')) {
-        roomUrl = `https://alqalam.daily.co/${targetRoomName}`;
+        roomUrl = `https://educatech.daily.co/${targetRoomName}`;
       } else {
         throw roomError;
       }
