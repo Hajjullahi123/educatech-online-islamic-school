@@ -64,12 +64,20 @@ const LoginPage = () => {
       >
         <div className="text-center mb-10">
           <Link href="/" className="inline-flex items-center gap-2 mb-6 group">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300"
-              style={{ backgroundColor: tenant.primaryColor }}
-            >
-              <BookOpen className="text-white w-6 h-6" />
-            </div>
+            {tenant.logoUrl ? (
+              <img
+                src={tenant.logoUrl}
+                alt={tenant.name}
+                className="w-12 h-12 rounded-2xl object-cover shadow-lg group-hover:scale-110 transition-transform duration-300 border border-amber-500/20"
+              />
+            ) : (
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300"
+                style={{ backgroundColor: tenant.primaryColor }}
+              >
+                <BookOpen className="text-white w-6 h-6" />
+              </div>
+            )}
             <span className="text-xl font-bold tracking-tight text-slate-900">
               {tenant.name}
             </span>

@@ -24,14 +24,14 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "EducaTech Online Islamic School | Multi-Tenant Platform",
-  description: "Empowering global Islamic academies and schools with white-label virtual Quran education technology, verified Ijazah scholars, and real-time synchronization.",
-  keywords: ["EducaTech", "Online Islamic School", "Multi-tenant SaaS", "Quran Academy", "Hifz", "Riwayah", "Tajweed", "Ijazah"],
+  title: "Al-Huda Quran Academy | Online Islamic School",
+  description: "Authentic Quranic education, verified Ijazah scholars, and real-time interactive Tajweed and Riwayah tracks.",
+  keywords: ["Al-Huda", "Al-Huda Quran Academy", "Online Islamic School", "Quran Academy", "Hifz", "Riwayah", "Tajweed", "Ijazah"],
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "EducaTech",
+    title: "Al-Huda Academy",
   },
   icons: {
     icon: "/icons/icon-192.png",

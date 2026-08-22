@@ -222,7 +222,7 @@ export default function Home() {
 
       {/* Footer Placeholder */}
       <footer className="py-12 text-center opacity-40 text-sm">
-        &copy; 2026 EducaTech Online Islamic School. All Rights Reserved.
+        &copy; 2026 Al-Huda Quran Academy. All Rights Reserved.
       </footer>
     </main>
   );

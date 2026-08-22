@@ -40,15 +40,23 @@ const Navbar = () => {
     <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'glass py-3' : 'bg-transparent py-5'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300"
-              style={{ backgroundColor: tenant.primaryColor }}
-            >
-              <BookOpen className="text-white w-5 h-5" />
-            </div>
+          <Link href="/" className="flex items-center gap-3 group">
+            {tenant.logoUrl ? (
+              <img
+                src={tenant.logoUrl}
+                alt={tenant.name}
+                className="w-11 h-11 rounded-2xl object-cover shadow-md group-hover:scale-105 transition-transform duration-300 border border-amber-500/20"
+              />
+            ) : (
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300"
+                style={{ backgroundColor: tenant.primaryColor }}
+              >
+                <BookOpen className="text-white w-5 h-5" />
+              </div>
+            )}
             <div className="flex flex-col">
-              <span className={`text-lg font-extrabold tracking-tight ${scrolled ? 'text-slate-900' : 'text-slate-900'}`}>
+              <span className={`text-base sm:text-lg font-extrabold tracking-tight ${scrolled ? 'text-slate-900' : 'text-slate-900'}`}>
                 {tenant.name}
               </span>
               <span className="text-[10px] uppercase tracking-[2px] opacity-70 font-semibold text-emerald-700">

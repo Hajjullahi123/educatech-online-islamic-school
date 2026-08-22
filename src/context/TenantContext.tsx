@@ -12,10 +12,10 @@ export interface TenantInfo {
 }
 
 const defaultTenant: TenantInfo = {
-  id: 'educatech-master',
-  name: 'EducaTech Online Islamic School',
-  slug: 'educatech',
-  logoUrl: null,
+  id: 'alhuda-master',
+  name: 'Al-Huda Quran Academy',
+  slug: 'al-huda',
+  logoUrl: '/logo.jpg',
   primaryColor: '#064e3b',
   secondaryColor: '#d97706',
 };

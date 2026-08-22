@@ -2,9 +2,9 @@ import { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'EducaTech Online Islamic School | Multi-Tenant Platform',
-    short_name: 'EducaTech',
-    description: 'Empowering global Islamic academies and schools with white-label virtual Quran education technology.',
+    name: 'Al-Huda Quran Academy | Online Islamic School',
+    short_name: 'Al-Huda',
+    description: 'Authentic Quranic education, verified Ijazah scholars, and real-time interactive Tajweed and Riwayah tracks.',
     start_url: '/',
     display: 'standalone',
     background_color: '#022c22',

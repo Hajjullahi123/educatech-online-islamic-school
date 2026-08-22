@@ -51,12 +51,20 @@ const Sidebar: React.FC<SidebarProps> = ({ userType }) => {
     <aside className="w-72 bg-white border-r border-slate-100 hidden lg:flex flex-col h-screen shrink-0 relative z-20">
       <div className="p-8 pb-4">
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform shrink-0"
-            style={{ backgroundColor: tenant.primaryColor }}
-          >
-            <BookOpen className="w-5 h-5" />
-          </div>
+          {tenant.logoUrl ? (
+            <img
+              src={tenant.logoUrl}
+              alt={tenant.name}
+              className="w-9 h-9 rounded-xl object-cover shadow-md group-hover:scale-105 transition-transform shrink-0 border border-amber-500/20"
+            />
+          ) : (
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform shrink-0"
+              style={{ backgroundColor: tenant.primaryColor }}
+            >
+              <BookOpen className="w-5 h-5" />
+            </div>
+          )}
           <div className="flex flex-col min-w-0">
             <span className="font-extrabold text-sm tracking-tight text-slate-900 truncate">
               {tenant.name}
