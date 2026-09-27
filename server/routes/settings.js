@@ -204,6 +204,7 @@ router.put('/', authenticate, async (req, res) => {
     schoolName, schoolAddress, schoolPhone, schoolEmail, schoolMotto,
     primaryColor, secondaryColor, accentColor,
     paystackPublicKey, paystackSecretKey, flutterwavePublicKey, flutterwaveSecretKey, enableOnlinePayment,
+    bankName, accountName, accountNumber,
     enableOnlineAdmissionForm, admissionFormPrice, defaultInterviewDate, defaultInterviewVenue,
     enableAdmissionExam, admissionExamPassMark, admissionExamDuration, defaultExaminationDate, defaultExamVenue,
     requireExamInvigilatorToken, examInvigilatorToken,
@@ -284,6 +285,9 @@ router.put('/', authenticate, async (req, res) => {
     if (flutterwavePublicKey !== undefined) updateData.flutterwavePublicKey = flutterwavePublicKey;
     if (flutterwaveSecretKey !== undefined) updateData.flutterwaveSecretKey = flutterwaveSecretKey;
     if (enableOnlinePayment !== undefined) updateData.enableOnlinePayment = !!enableOnlinePayment;
+    if (bankName !== undefined) updateData.bankName = bankName;
+    if (accountName !== undefined) updateData.accountName = accountName;
+    if (accountNumber !== undefined) updateData.accountNumber = accountNumber;
     if (enableOnlineAdmissionForm !== undefined) updateData.enableOnlineAdmissionForm = enableOnlineAdmissionForm === 'true' || enableOnlineAdmissionForm === true;
     if (admissionFormPrice !== undefined) updateData.admissionFormPrice = Number(admissionFormPrice);
     if (defaultInterviewDate !== undefined) updateData.defaultInterviewDate = defaultInterviewDate ? new Date(defaultInterviewDate) : null;

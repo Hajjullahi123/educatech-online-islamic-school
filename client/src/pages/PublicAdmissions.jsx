@@ -81,6 +81,9 @@ const PublicAdmissions = () => {
   // File Upload State
   const [files, setFiles] = useState({ passport: null, birthCert: null, reportCard: null });
   const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [paymentProofFile, setPaymentProofFile] = useState(null);
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
+
 
   // CBT Exam Taking State
   const [isTakingExam, setIsTakingExam] = useState(false);
@@ -250,6 +253,35 @@ const PublicAdmissions = () => {
       localStorage.setItem(`appCode_${schoolSlug}`, inputCode.trim().toUpperCase());
     } finally {
       setIsVerifyingCode(false);
+    }
+  };
+
+  const handleUploadPaymentProof = async () => {
+    if (!paymentProofFile || !offlineSlip?.applicationCode) {
+      return toast.error('Please select a file to upload.');
+    }
+    setIsUploadingProof(true);
+    try {
+      const formData = new FormData();
+      formData.append('paymentProof', paymentProofFile);
+
+      const r = await fetch(`${API_BASE_URL}/api/admissions/application/${offlineSlip.applicationCode}/upload-payment-proof`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await r.json();
+      if (r.ok && data.success) {
+        toast.success('Payment proof uploaded successfully. Waiting for admin approval.');
+        setPaymentProofFile(null);
+        setOfflineSlip({ ...offlineSlip, proofUploaded: true });
+      } else {
+        toast.error(data.error || 'Upload failed');
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error('Upload failed');
+    } finally {
+      setIsUploadingProof(false);
     }
   };
 
@@ -899,10 +931,44 @@ const PublicAdmissions = () => {
                       
                       <div className="bg-gray-50 p-4 rounded-xl text-left text-xs space-y-2 border border-gray-150">
                         <p><strong>Form Price:</strong> ₦{offlineSlip.price?.toLocaleString()}</p>
-                        <p><strong>Payment Reference:</strong> <code className="bg-gray-200 px-1 py-0.5 rounded text-blue-700 font-bold">{offlineSlip.reference}</code></p>
+                        
+                        {(offlineSlip.bankName || offlineSlip.accountName || offlineSlip.accountNumber) && (
+                          <div className="mt-4 p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
+                            <p className="font-bold text-gray-700 mb-2">School Bank Details</p>
+                            {offlineSlip.bankName && <p><strong>Bank:</strong> {offlineSlip.bankName}</p>}
+                            {offlineSlip.accountName && <p><strong>Account Name:</strong> {offlineSlip.accountName}</p>}
+                            {offlineSlip.accountNumber && <p><strong>Account Number:</strong> {offlineSlip.accountNumber}</p>}
+                          </div>
+                        )}
+
+                        <p className="mt-4"><strong>Payment Reference:</strong> <code className="bg-gray-200 px-1 py-0.5 rounded text-blue-700 font-bold">{offlineSlip.reference}</code></p>
                         <p><strong>Temporary Code:</strong> <code className="bg-gray-200 px-1 py-0.5 rounded text-gray-700">{offlineSlip.applicationCode}</code></p>
                         <p className="text-gray-400 mt-2 font-medium">Please save this reference. Once verified by the admissions desk, this temporary code will unlock the application form.</p>
                       </div>
+
+                      {offlineSlip.proofUploaded ? (
+                        <div className="bg-green-50 text-green-700 p-4 rounded-xl text-xs border border-green-200 text-left">
+                          <p className="font-bold">Proof Uploaded!</p>
+                          <p>Your payment proof is currently under review by the admin. Check back soon.</p>
+                        </div>
+                      ) : (
+                        <div className="text-left bg-gray-50 p-4 rounded-xl border border-gray-200 mt-4">
+                          <label className="block text-xs font-bold text-gray-700 mb-2">Upload Proof of Payment (Optional)</label>
+                          <input 
+                            type="file" 
+                            accept="image/*,.pdf" 
+                            className="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                            onChange={(e) => setPaymentProofFile(e.target.files[0])}
+                          />
+                          <button
+                            onClick={handleUploadPaymentProof}
+                            disabled={isUploadingProof || !paymentProofFile}
+                            className={`mt-3 w-full py-2 rounded-xl font-bold text-xs ${paymentProofFile ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
+                          >
+                            {isUploadingProof ? 'Uploading...' : 'Submit Proof'}
+                          </button>
+                        </div>
+                      )}
                       
                       <div className="flex gap-4">
                         <button onClick={() => window.print()} className="flex-1 py-3 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2">

@@ -20,6 +20,9 @@ const Settings = () => {
     flutterwavePublicKey: '',
     flutterwaveSecretKey: '',
     enableOnlinePayment: false,
+    bankName: '',
+    accountName: '',
+    accountNumber: '',
     enableOnlineAdmissionForm: false,
     admissionFormPrice: 0,
     defaultInterviewDate: '',
@@ -1126,10 +1129,55 @@ const Settings = () => {
                   </div>
                 </div>
               </div>
+              <div className="space-y-4 pt-6 border-t border-gray-200 mt-6">
+                <h3 className="text-lg font-medium text-gray-900">Bank Transfer Details (Offline Payments)</h3>
+                <p className="text-sm text-gray-500">Provide the school's bank account details for applicants who choose to pay offline.</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Bank Name
+                    </label>
+                    <input
+                      type="text"
+                      name="bankName"
+                      value={settings.bankName || ''}
+                      onChange={handleInputChange}
+                      placeholder="e.g. Guarantee Trust Bank"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Account Name
+                    </label>
+                    <input
+                      type="text"
+                      name="accountName"
+                      value={settings.accountName || ''}
+                      onChange={handleInputChange}
+                      placeholder="e.g. EduTechAI International"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Account Number
+                    </label>
+                    <input
+                      type="text"
+                      name="accountNumber"
+                      value={settings.accountNumber || ''}
+                      onChange={handleInputChange}
+                      placeholder="e.g. 0123456789"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    />
+                  </div>
+                </div>
+              </div>
 
 
 
-              <div className="flex justify-end">
+              <div className="flex justify-end mt-6">
                 <button
                   type="submit"
                   disabled={saving}

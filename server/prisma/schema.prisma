@@ -95,6 +95,9 @@ model School {
   flutterwavePublicKey        String?
   flutterwaveSecretKey        String?
   enableOnlinePayment         Boolean                   @default(false)
+  bankName                    String?
+  accountName                 String?
+  accountNumber               String?
   emailUser                   String?
   emailPassword               String?
   emailHost                   String?
@@ -1780,6 +1783,7 @@ model AdmissionApplication {
   birthCertUrl        String?
   reportCardUrl       String?
   paymentReference    String?  @unique
+  paymentProofUrl     String?
   paymentStatus       String   @default("pending") // pending, paid, waived
   status              String   @default("draft") // draft, submitted, under_review, admitted, rejected
   interviewDate       DateTime?

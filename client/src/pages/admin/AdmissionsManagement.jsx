@@ -1457,12 +1457,24 @@ const AdmissionsManagement = () => {
 
                 <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200 justify-end">
                   {selectedApp.paymentStatus !== 'paid' && (
-                    <button
-                      onClick={() => handleUpdateStatus(selectedApp.id, null, 'paid')}
-                      className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center gap-1 hover:bg-emerald-700"
-                    >
-                      <FiCheckCircle className="w-3.5 h-3.5" /> Mark Offline Payment Paid
-                    </button>
+                    <>
+                      {selectedApp.paymentProofUrl && (
+                        <a
+                          href={`${API_BASE_URL}${selectedApp.paymentProofUrl}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold hover:bg-blue-100 flex items-center gap-1"
+                        >
+                          <FiEye className="w-3.5 h-3.5" /> View Receipt
+                        </a>
+                      )}
+                      <button
+                        onClick={() => handleUpdateStatus(selectedApp.id, null, 'paid')}
+                        className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center gap-1 hover:bg-emerald-700"
+                      >
+                        <FiCheckCircle className="w-3.5 h-3.5" /> Mark Offline Payment Paid
+                      </button>
+                    </>
                   )}
 
                   {selectedApp.status === 'submitted' && (

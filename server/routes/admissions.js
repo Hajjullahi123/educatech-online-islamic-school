@@ -460,7 +460,10 @@ router.post('/initialize-payment', async (req, res) => {
         paymentStatus: 'pending', 
         isOffline: true,
         reference,
-        price
+        price,
+        bankName: school.bankName,
+        accountName: school.accountName,
+        accountNumber: school.accountNumber
       });
     }
 
@@ -875,6 +878,35 @@ router.post('/application/:code/upload', upload.fields([
   } catch (error) {
     console.error('Upload documents error:', error);
     res.status(500).json({ error: 'Failed to upload documents' });
+  }
+});
+
+/**
+ * @route   POST /api/admissions/application/:code/upload-payment-proof
+ * @desc    Upload proof of offline payment
+ */
+router.post('/application/:code/upload-payment-proof', upload.single('paymentProof'), async (req, res) => {
+  const { code } = req.params;
+
+  try {
+    const application = await prisma.admissionApplication.findUnique({
+      where: { applicationCode: code }
+    });
+
+    if (!application) return res.status(404).json({ error: 'Application not found' });
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+    const proofUrl = await uploadFile(req.file, `admissions/${code}/paymentProof`);
+
+    const updated = await prisma.admissionApplication.update({
+      where: { applicationCode: code },
+      data: { paymentProofUrl: proofUrl }
+    });
+
+    res.json({ success: true, paymentProofUrl: proofUrl, application: updated });
+  } catch (error) {
+    console.error('Upload payment proof error:', error);
+    res.status(500).json({ error: 'Failed to upload payment proof' });
   }
 });
 
@@ -1311,6 +1343,7 @@ router.put('/admin/:id/status', authenticate, async (req, res) => {
     // Admin manually verifying offline payment
     if (paymentStatus === 'paid' && application.paymentStatus !== 'paid') {
       updateData.paymentStatus = 'paid';
+      updateData.paymentProofUrl = null;
       const school = await prisma.school.findUnique({ where: { id: req.schoolId } });
       
       const updatedApp = await prisma.admissionApplication.update({
