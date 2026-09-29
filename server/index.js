@@ -184,7 +184,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
 // Server-side request timeout — prevents infinite hangs on slow DB queries
 app.use('/api', (req, res, next) => {
   const isPdfRoute = req.originalUrl?.includes('/generate-pdf') || req.originalUrl?.includes('/bulk-generate-pdf');
-  const TIMEOUT_MS = isPdfRoute ? 60000 : 25000; // 60s for PDF generation, 25s for normal routes
+  const isUploadRoute = req.originalUrl?.includes('/upload-logo') || req.originalUrl?.includes('/upload-signature') || req.originalUrl?.includes('/upload');
+  const TIMEOUT_MS = (isPdfRoute || isUploadRoute) ? 60000 : 25000; // 60s for PDF generation & file uploads, 25s for normal routes
   const timer = setTimeout(() => {
     if (!res.headersSent) {
       console.error(`[TIMEOUT] ${req.method} ${req.originalUrl} exceeded ${TIMEOUT_MS}ms`);

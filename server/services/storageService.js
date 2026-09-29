@@ -20,14 +20,14 @@ const uploadFromBuffer = (buffer, options = {}) => {
   return new Promise((resolve, reject) => {
     // Timeout to prevent hanging connections
     const timeoutId = setTimeout(() => {
-      reject(new Error('Cloudinary upload timed out after 15 seconds'));
-    }, 15000);
+      reject(new Error('Cloudinary upload timed out after 30 seconds'));
+    }, 30000);
 
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder: 'school_management',
         resource_type: 'auto',
-        timeout: 15000,
+        timeout: 30000,
         ...options
       },
       (error, result) => {
