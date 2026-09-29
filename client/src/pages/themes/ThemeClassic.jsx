@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import PublicNewsEventsSection from '../../components/PublicNewsEventsSection';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiLogOut, FiMail, FiPhone, FiMapPin, FiArrowRight, FiFacebook, FiInstagram, FiMessageCircle, FiGlobe, FiChevronRight, FiMenu, FiX, FiChevronDown } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
@@ -278,6 +279,8 @@ const ThemeClassic = ({ school, getLogoUrl, isSuperAdmin }) => {
           <TuitionEstimatorWidget school={school} />
         </div>
       </section>
+
+      <PublicNewsEventsSection school={school} getLogoUrl={getLogoUrl} primaryColor={primaryColor} />
 
       <AccreditationsBand primary={primaryColor} />
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import PublicNewsEventsSection from '../../components/PublicNewsEventsSection';
 import {
   FiArrowRight,
   FiMapPin,
@@ -660,6 +661,8 @@ const ThemeModern = ({ school, getLogoUrl, isSuperAdmin }) => {
       {/* ══════════════════════════════════
           NEWS, EVENTS, TIMELINE, FAQ & TUITION
       ══════════════════════════════════ */}
+      <PublicNewsEventsSection school={school} getLogoUrl={getLogoUrl} primaryColor={primary} isDarkMode={isDarkMode} />
+
       <section className="py-12 border-t border-blue-100 dark:border-slate-800 transition-colors duration-300" style={{ backgroundColor: isDarkMode ? '#0f172a' : '#e8f4fd' }}>
         <div className="w-[90%] max-w-7xl mx-auto grid lg:grid-cols-2 gap-6 items-start relative z-20">
           <InteractiveTimelineWidget school={school} />

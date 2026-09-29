@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PublicNewsEventsSection from '../../components/PublicNewsEventsSection';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiLogOut, FiMail, FiPhone, FiMapPin, FiArrowRight, FiFacebook, FiInstagram, FiMessageCircle, FiChevronDown, FiMenu, FiX, FiBookOpen, FiAward, FiUsers } from 'react-icons/fi';
@@ -242,6 +243,8 @@ const ThemeAcademic = ({ school, getLogoUrl, isSuperAdmin }) => {
           </div>
         </div>
       </section>
+
+      <PublicNewsEventsSection school={school} getLogoUrl={getLogoUrl} primaryColor={primaryColor}  />
 
       <AccreditationsBand primary={primaryColor} />
 

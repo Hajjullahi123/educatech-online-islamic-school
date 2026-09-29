@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PublicNewsEventsSection from '../../components/PublicNewsEventsSection';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiLogOut, FiMail, FiPhone, FiMapPin, FiArrowRight, FiFacebook, FiInstagram, FiMessageCircle, FiChevronDown, FiMenu, FiX, FiHeart, FiStar, FiSun } from 'react-icons/fi';
@@ -204,6 +205,8 @@ const ThemePlayful = ({ school, getLogoUrl, isSuperAdmin }) => {
            </div>
         </div>
       </section>
+
+      <PublicNewsEventsSection school={school} getLogoUrl={getLogoUrl} primaryColor={primaryColor}  />
 
       {/* Footer */}
       <footer className="mt-auto bg-slate-800 text-white pt-20 pb-10 relative overflow-hidden rounded-t-[4rem]">

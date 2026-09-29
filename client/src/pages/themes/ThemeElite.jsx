@@ -192,6 +192,8 @@ const ThemeElite = ({ school, getLogoUrl, isSuperAdmin }) => {
         </div>
       </section>
 
+      <PublicNewsEventsSection school={school} getLogoUrl={getLogoUrl} primaryColor={primaryColor} isDarkMode={true} />
+
       {/* Footer */}
       <footer className="bg-[#050505] pt-24 pb-12 border-t border-white/10 mt-auto">
         <div className="max-w-7xl mx-auto px-6">
