@@ -12,7 +12,7 @@ const NewsEventsManagement = () => {
     content: '',
     type: 'news',
     eventDate: '',
-    isPublished: false,
+    isPublished: true,
     image: null
   });
   const [imagePreview, setImagePreview] = useState(null);
@@ -67,7 +67,7 @@ const NewsEventsManagement = () => {
         toast.success(editing ? 'Updated successfully!' : 'Created successfully!');
         setShowForm(false);
         setEditing(null);
-        setFormData({ title: '', content: '', type: 'news', eventDate: '', isPublished: false, image: null });
+        setFormData({ title: '', content: '', type: 'news', eventDate: '', isPublished: true, image: null });
         setImagePreview(null);
         fetchItems();
       } else {
@@ -141,7 +141,7 @@ const NewsEventsManagement = () => {
           onClick={() => {
             setShowForm(true);
             setEditing(null);
-            setFormData({ title: '', content: '', type: 'news', eventDate: '', isPublished: false, image: null });
+            setFormData({ title: '', content: '', type: 'news', eventDate: '', isPublished: true, image: null });
             setImagePreview(null);
           }}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -202,6 +202,19 @@ const NewsEventsManagement = () => {
                   />
                 </div>
               )}
+
+              <div className="flex items-center space-x-2 py-2 bg-blue-50/70 p-3 rounded-lg border border-blue-100">
+                <input
+                  type="checkbox"
+                  id="isPublished"
+                  checked={formData.isPublished}
+                  onChange={(e) => setFormData({ ...formData, isPublished: e.target.checked })}
+                  className="h-4 w-4 text-blue-600 rounded cursor-pointer"
+                />
+                <label htmlFor="isPublished" className="text-sm font-bold text-blue-900 cursor-pointer">
+                  Publish to School Public Website Immediately
+                </label>
+              </div>
 
               <div>
                 <label className="block text-sm font-medium mb-1">Featured Image</label>

@@ -164,6 +164,10 @@ router.post('/', authenticate, authorize(['admin', 'principal']), upload.single(
       imageUrl = fileToBase64(req.file);
     }
 
+    const shouldPublish = req.body.isPublished !== undefined 
+      ? (req.body.isPublished === 'true' || req.body.isPublished === true) 
+      : true;
+
     const item = await prisma.newsEvent.create({
       data: {
         schoolId: req.schoolId,
@@ -172,6 +176,7 @@ router.post('/', authenticate, authorize(['admin', 'principal']), upload.single(
         type,
         eventDate: eventDate ? new Date(eventDate) : null,
         imageUrl,
+        isPublished: shouldPublish,
         authorId: req.user.id
       },
       include: {
@@ -223,7 +228,7 @@ router.put('/:id', authenticate, authorize(['admin', 'principal']), upload.singl
     if (type !== undefined) updateData.type = type;
     if (eventDate !== undefined) updateData.eventDate = eventDate ? new Date(eventDate) : null;
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
-    if (isPublished !== undefined) updateData.isPublished = isPublished;
+    if (isPublished !== undefined) updateData.isPublished = (isPublished === "true" || isPublished === true);
 
     const item = await prisma.newsEvent.update({
       where: {

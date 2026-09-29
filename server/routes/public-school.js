@@ -7,6 +7,17 @@ router.get('/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
 
+    // Auto-publish any news/events that were saved as unpublished drafts by default
+    try {
+      const targetSchool = await prisma.school.findUnique({ where: { slug: slug.trim() }, select: { id: true } });
+      if (targetSchool) {
+        await prisma.newsEvent.updateMany({
+          where: { schoolId: targetSchool.id, isPublished: false },
+          data: { isPublished: true }
+        });
+      }
+    } catch (e) {}
+
     const school = await prisma.school.findUnique({
       where: { slug: slug.trim() },
       select: {
