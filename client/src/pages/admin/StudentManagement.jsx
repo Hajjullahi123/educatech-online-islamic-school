@@ -710,7 +710,7 @@ Note: Password must be changed on first login.
   });
 
   const handleDownloadTemplate = async () => {
-    const url = `${API_BASE_URL}/api/bulk-upload/template/students`;
+    const url = `${API_BASE_URL}/api/bulk-upload/template/students?t=${Date.now()}`;
     const token = localStorage.getItem('token');
 
     try {

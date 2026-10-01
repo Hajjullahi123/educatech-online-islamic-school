@@ -175,7 +175,9 @@ const AdminTeacherDashboard = ({ user, schoolSettings }) => {
 
       // Teacher specific assignments
       if (user?.role === 'teacher') {
-        const trackingRes = await api.get(`/api/analytics/submission-tracking?teacherId=${user.id}`);
+        const termQuery = activeTerm ? `&termId=${activeTerm.id}` : '';
+        const sessionQuery = activeSession ? `&sessionId=${activeSession.id}` : '';
+        const trackingRes = await api.get(`/api/analytics/submission-tracking?teacherId=${user.id}${termQuery}${sessionQuery}`);
         if (trackingRes.ok) {
           const data = await trackingRes.json();
           const tracking = Array.isArray(data?.tracking) ? data.tracking : [];
@@ -183,7 +185,7 @@ const AdminTeacherDashboard = ({ user, schoolSettings }) => {
           setAssignedClassCount(new Set(tracking.map(a => a.classId)).size);
         }
 
-        const cbtRes = await api.get(`/api/analytics/cbt-tracking?teacherId=${user.id}`);
+        const cbtRes = await api.get(`/api/analytics/cbt-tracking?teacherId=${user.id}${termQuery}${sessionQuery}`);
         if (cbtRes.ok) {
           const cbtData = await cbtRes.json();
           setTeacherCBTExams(Array.isArray(cbtData) ? cbtData : []);
@@ -605,7 +607,7 @@ const AdminTeacherDashboard = ({ user, schoolSettings }) => {
                       {subjects.map(a => (
                         <Link 
                           key={a.id} 
-                          to={`/dashboard/result-entry?classId=${a.classId}&subjectId=${a.subjectId}`} 
+                          to={`/dashboard/result-entry?classId=${a.classId}&subjectId=${a.subjectId}&termId=${selectedDashboardTerm?.id || ''}&sessionId=${selectedDashboardSession?.id || ''}`} 
                           className="group flex items-center justify-between p-4 bg-gray-50 hover:bg-white hover:ring-2 hover:ring-primary/20 rounded-xl transition-all border border-transparent hover:border-primary/10 shadow-sm hover:shadow-md active:scale-[0.98]"
                         >
                           <div className="flex items-center gap-3">

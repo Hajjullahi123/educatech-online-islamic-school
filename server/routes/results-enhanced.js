@@ -127,7 +127,19 @@ router.get('/class/:classId/subject/:subjectId/term/:termId',
       const { classId, subjectId, termId } = req.params;
       const { academicSessionId, sessionId } = req.query;
 
-      const effectiveSessionId = academicSessionId || sessionId;
+      let effectiveSessionId = academicSessionId || sessionId;
+
+      // If effectiveSessionId is not passed in query, resolve it from the term record
+      if (!effectiveSessionId || isNaN(parseInt(effectiveSessionId))) {
+        const termRecord = await prisma.term.findUnique({
+          where: { id: parseInt(termId) },
+          select: { academicSessionId: true }
+        });
+        if (termRecord) {
+          effectiveSessionId = termRecord.academicSessionId;
+        }
+      }
+
       const whereClause = {
         schoolId: req.schoolId,
         classId: parseInt(classId),

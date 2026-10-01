@@ -221,19 +221,21 @@ router.get('/template/students', authenticate, authorize(['admin', 'teacher', 'p
     // Add a second sheet with Class IDs for reference
     const refSheet = workbook.addWorksheet('Class IDs Reference');
     refSheet.columns = [
-      { header: 'Local ID (USE THIS)', key: 'localId', width: 20 },
+      { header: 'Local ID (USE THIS OR CLASS ID)', key: 'localId', width: 25 },
+      { header: 'Database Class ID', key: 'dbId', width: 20 },
       { header: 'Class Name', key: 'name', width: 30 },
       { header: 'Class Arm', key: 'arm', width: 15 },
-      { header: 'Dropdown Selection', key: 'dropdown', width: 40 }
+      { header: 'Dropdown Selection', key: 'dropdown', width: 45 }
     ];
     refSheet.getRow(1).font = { bold: true };
     
     classes.forEach((c, index) => {
       refSheet.addRow({ 
         localId: index + 1, 
+        dbId: c.id,
         name: c.name,
         arm: c.arm || 'N/A',
-        dropdown: `${index + 1} - ${c.name} ${c.arm || ''}`.trim()
+        dropdown: `${index + 1} - ${c.name} ${c.arm || ''} (Class ID: ${c.id})`.trim()
       });
     });
 
@@ -266,6 +268,9 @@ router.get('/template/students', authenticate, authorize(['admin', 'teacher', 'p
     // Add instructions sheet
     addInstructionsSheet(workbook, 'student');
 
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename=Student_Bulk_Upload_Template.xlsx');
     
@@ -437,22 +442,29 @@ router.post('/upload', authenticate, authorize(['admin', 'teacher', 'principal']
         let classIdInt = parseInt(classIdVal);
         let classInfo = null;
 
-        // 1. Try mapping from Local ID (1, 2, 3...) first
-        if (!isNaN(classIdInt) && classIdInt > 0 && classIdInt <= availableClasses.length) {
+        // 1. First, check if input matches an exact Database Class ID in this school
+        if (!isNaN(classIdInt)) {
+          classInfo = availableClasses.find(c => c.id === classIdInt);
+        }
+
+        // 2. Second, fallback to Local 1-based index (1, 2, 3...)
+        if (!classInfo && !isNaN(classIdInt) && classIdInt > 0 && classIdInt <= availableClasses.length) {
           classInfo = availableClasses[classIdInt - 1];
         }
 
-        // 2. Fallback to Database ID (for compatibility with existing files)
+        // 3. Fallback to Database ID search if not already found in availableClasses
         if (!classInfo && !isNaN(classIdInt)) {
           classInfo = await prisma.class.findFirst({
             where: { id: classIdInt, schoolId: schoolIdInt }
           });
         }
 
-        // 3. Fallback to Class Name matching (use original value for name matching)
+        // 4. Fallback to Class Name matching (use original value for name matching)
         if (!classInfo && studentData.classId) {
           const classNameStr = studentData.classId.toString().trim().toLowerCase();
           classInfo = availableClasses.find(c => 
+            c.name.toLowerCase() === classNameStr || 
+            `${c.name} ${c.arm || ''}`.toLowerCase() === classNameStr ||
             c.name.toLowerCase().includes(classNameStr) || 
             `${c.name} ${c.arm || ''}`.toLowerCase().includes(classNameStr)
           );

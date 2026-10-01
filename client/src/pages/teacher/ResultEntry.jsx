@@ -212,8 +212,9 @@ const ResultEntry = () => {
       setStudents(loadedStudents);
 
       // 2. Fetch Existing Results
+      const sessionQuery = selectedSession ? `?academicSessionId=${selectedSession}` : '';
       const resultsResponse = await api.get(
-        `/api/results/class/${selectedClass}/subject/${selectedSubject}/term/${selectedTerm}`
+        `/api/results/class/${selectedClass}/subject/${selectedSubject}/term/${selectedTerm}${sessionQuery}`
       );
       if (resultsResponse.ok) {
         const resultsData = await resultsResponse.json();
