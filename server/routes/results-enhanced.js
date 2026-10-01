@@ -125,14 +125,22 @@ router.get('/class/:classId/subject/:subjectId/term/:termId',
   async (req, res) => {
     try {
       const { classId, subjectId, termId } = req.params;
+      const { academicSessionId, sessionId } = req.query;
+
+      const effectiveSessionId = academicSessionId || sessionId;
+      const whereClause = {
+        schoolId: req.schoolId,
+        classId: parseInt(classId),
+        subjectId: parseInt(subjectId),
+        termId: parseInt(termId)
+      };
+
+      if (effectiveSessionId && !isNaN(parseInt(effectiveSessionId))) {
+        whereClause.academicSessionId = parseInt(effectiveSessionId);
+      }
 
       const results = await prisma.result.findMany({
-        where: {
-          schoolId: req.schoolId,
-          classId: parseInt(classId),
-          subjectId: parseInt(subjectId),
-          termId: parseInt(termId)
-        },
+        where: whereClause,
         include: {
           student: {
             include: {

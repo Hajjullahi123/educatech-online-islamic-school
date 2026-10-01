@@ -128,12 +128,13 @@ const ResultEntry = () => {
       const data = await response.json();
       const termsArr = Array.isArray(data) ? data : [];
       setTerms(termsArr);
-      // Auto-select current term if not already set (empty string is also "not set")
-      const termIsAlreadySet = selectedTerm && selectedTerm.toString().trim() !== '' && !isNaN(parseInt(selectedTerm));
-      if (!termIsAlreadySet) {
-        // Prefer the current (active) term — never fall back to an arbitrary first term
-        const current = termsArr.find(t => t.isCurrent);
-        if (current) setSelectedTerm(current.id);
+      // Validate if currently selectedTerm belongs to this session
+      const termIsValidInSession = termsArr.some(t => String(t.id) === String(selectedTerm));
+      if (!termIsValidInSession) {
+        // Prefer current (active) term in this session, fallback to first term
+        const current = termsArr.find(t => t.isCurrent) || termsArr[0];
+        if (current) setSelectedTerm(String(current.id));
+        else setSelectedTerm('');
       }
     } catch (error) {
       console.error('Error fetching terms:', error);
@@ -525,8 +526,7 @@ const ResultEntry = () => {
       </div>
 
       {/* Filters Card */}
-      {!(new URLSearchParams(location.search).get('classId') && new URLSearchParams(location.search).get('sessionId') && new URLSearchParams(location.search).get('termId')) && (
-        <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
+      <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Academic Session</label>
@@ -601,7 +601,6 @@ const ResultEntry = () => {
             </div>
           </div>
         </div>
-      )}
 
       {/* Excel Download Section */}
       {selectedClass && selectedSubject && selectedTerm && selectedSession && (

@@ -348,13 +348,15 @@ router.get('/submission-tracking', authenticate, authorize(['admin', 'principal'
       select: { examMode: true, examModeType: true }
     });
 
-    const currentSession = await prisma.academicSession.findFirst({ where: { schoolId: req.schoolId, isCurrent: true } });
-    const currentTerm = await prisma.term.findFirst({ where: { schoolId: req.schoolId, isCurrent: true } });
+    const { teacherId, termId: reqTermId, sessionId: reqSessionId } = req.query;
 
-    // Allow fetching assignments even if term/session isn't perfectly configured
-    // so the teacher dashboard doesn't just show 'No Subjects Assigned' with a silent 400 error.
+    const currentSession = reqSessionId && !isNaN(parseInt(reqSessionId))
+      ? await prisma.academicSession.findFirst({ where: { id: parseInt(reqSessionId), schoolId: req.schoolId } })
+      : await prisma.academicSession.findFirst({ where: { schoolId: req.schoolId, isCurrent: true } });
 
-    const { teacherId } = req.query;
+    const currentTerm = reqTermId && !isNaN(parseInt(reqTermId))
+      ? await prisma.term.findFirst({ where: { id: parseInt(reqTermId), schoolId: req.schoolId } })
+      : await prisma.term.findFirst({ where: { schoolId: req.schoolId, isCurrent: true } });
 
     // Enforce role constraints for teachers
     if (req.user.role === 'teacher') {

@@ -73,10 +73,19 @@ router.get('/', authenticate, async (req, res) => {
 // Get assignments for a specific teacher
 router.get('/teacher/:teacherId', authenticate, async (req, res) => {
   try {
-    const activeTerm = await prisma.term.findFirst({
-      where: { schoolId: req.schoolId, isCurrent: true }
-    });
-    const termFilter = activeTerm ? { OR: [{ termId: activeTerm.id }, { termId: null }] } : {};
+    const { termId } = req.query;
+    let targetTermId = null;
+
+    if (termId && !isNaN(parseInt(termId))) {
+      targetTermId = parseInt(termId);
+    } else {
+      const activeTerm = await prisma.term.findFirst({
+        where: { schoolId: req.schoolId, isCurrent: true }
+      });
+      if (activeTerm) targetTermId = activeTerm.id;
+    }
+
+    const termFilter = targetTermId ? { OR: [{ termId: targetTermId }, { termId: null }] } : {};
 
     const assignments = await prisma.teacherAssignment.findMany({
       where: {
