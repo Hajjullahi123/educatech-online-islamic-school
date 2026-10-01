@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../api';
 import { toast } from '../../utils/toast';
+import { useAuth } from '../../context/AuthContext';
 import { Check, RotateCcw, Save, ShieldCheck, Sparkles, Sliders, Layers, Plus, Trash2, UserCheck, X } from 'lucide-react';
 
 const SectionWeightingsConfig = () => {
+  const { user } = useAuth();
   const [classes, setClasses] = useState([]);
   const [sections, setSections] = useState([]);
   const [subAdmins, setSubAdmins] = useState([]);
@@ -331,13 +333,15 @@ const SectionWeightingsConfig = () => {
             </h3>
             <p className="text-slate-500 text-xs font-bold mt-0.5">Create custom sections (e.g. SAT & SUN) and set their grading rules.</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowSectionModal(true)}
-            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-md transition-all flex items-center gap-2 self-start"
-          >
-            <Plus className="w-4 h-4" /> Add Custom Section (SAT/SUN)
-          </button>
+          {user?.role !== 'sub_admin' && (
+            <button
+              type="button"
+              onClick={() => setShowSectionModal(true)}
+              className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-md transition-all flex items-center gap-2 self-start"
+            >
+              <Plus className="w-4 h-4" /> Add Custom Section (SAT/SUN)
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -448,63 +452,65 @@ const SectionWeightingsConfig = () => {
       </div>
 
       {/* Sub-Admin Section Assignment Module */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4 border-slate-100">
-          <div>
-            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
-              <UserCheck className="w-5 h-5 text-indigo-600" />
-              Section Admin Access & Permissions Scoping
-            </h3>
-            <p className="text-slate-500 text-xs font-bold mt-1">
-              Assign Sub-Admins or Section Heads to manage specific school sections (e.g. Primary Admin, SAT Coordinator).
-            </p>
+      {user?.role !== 'sub_admin' && (
+        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4 border-slate-100">
+            <div>
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-indigo-600" />
+                Section Admin Access & Permissions Scoping
+              </h3>
+              <p className="text-slate-500 text-xs font-bold mt-1">
+                Assign Sub-Admins or Section Heads to manage specific school sections (e.g. Primary Admin, SAT Coordinator).
+              </p>
+            </div>
           </div>
-        </div>
 
-        {subAdmins.length === 0 ? (
-          <div className="text-center py-8 text-slate-400 font-bold text-sm">
-            No Sub-Admin or Principal accounts found.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {subAdmins.map((admin) => {
-              const assignedSecs = adminAssignments
-                .filter(a => a.userId === admin.id)
-                .map(a => a.Section?.name)
-                .filter(Boolean);
+          {subAdmins.length === 0 ? (
+            <div className="text-center py-8 text-slate-400 font-bold text-sm">
+              No Sub-Admin or Principal accounts found.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {subAdmins.map((admin) => {
+                const assignedSecs = adminAssignments
+                  .filter(a => a.userId === admin.id)
+                  .map(a => a.Section?.name)
+                  .filter(Boolean);
 
-              return (
-                <div key={admin.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-4">
-                  <div>
-                    <h5 className="font-black text-sm text-slate-900">{admin.firstName} {admin.lastName}</h5>
-                    <p className="text-xs text-slate-500 font-medium">@{admin.username} ({admin.role})</p>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {assignedSecs.length > 0 ? (
-                        assignedSecs.map((name, i) => (
-                          <span key={i} className="px-2 py-0.5 bg-indigo-100 text-indigo-900 rounded font-black text-[10px]">
-                            {name}
+                return (
+                  <div key={admin.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-4">
+                    <div>
+                      <h5 className="font-black text-sm text-slate-900">{admin.firstName} {admin.lastName}</h5>
+                      <p className="text-xs text-slate-500 font-medium">@{admin.username} ({admin.role})</p>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {assignedSecs.length > 0 ? (
+                          assignedSecs.map((name, i) => (
+                            <span key={i} className="px-2 py-0.5 bg-indigo-100 text-indigo-900 rounded font-black text-[10px]">
+                              {name}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="px-2 py-0.5 bg-slate-200 text-slate-600 rounded font-bold text-[10px]">
+                            All Sections (Full Access)
                           </span>
-                        ))
-                      ) : (
-                        <span className="px-2 py-0.5 bg-slate-200 text-slate-600 rounded font-bold text-[10px]">
-                          All Sections (Full Access)
-                        </span>
-                      )}
+                        )}
+                      </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenAdminAssignModal(admin)}
+                      className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 rounded-xl font-bold text-xs shadow-xs"
+                    >
+                      Manage Scope
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenAdminAssignModal(admin)}
-                    className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 rounded-xl font-bold text-xs shadow-xs"
-                  >
-                    Manage Scope
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Class Level Detailed Overrides Table */}
       <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">

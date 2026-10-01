@@ -173,6 +173,10 @@ const UserManagement = () => {
   };
 
   const handleEdit = (user) => {
+    if (currentUser?.role === 'sub_admin' && ['admin', 'sub_admin', 'principal', 'superadmin'].includes(user.role)) {
+      toast.error('Sub-admins are not authorized to edit Administrative or Sub Admin accounts');
+      return;
+    }
     setEditingUser(user);
     setFormData({
       username: user.username,
@@ -213,6 +217,10 @@ const UserManagement = () => {
 
   const handleDeleteClick = async (userId) => {
     const user = users.find(u => u.id === userId);
+    if (currentUser?.role === 'sub_admin' && ['admin', 'sub_admin', 'principal', 'superadmin'].includes(user?.role)) {
+      toast.error('Sub-admins are not authorized to delete Administrative or Sub Admin accounts');
+      return;
+    }
     const userName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.username || '';
     setDeleteModal({ show: true, userId, userName, loading: true, dependencies: null, confirmName: '', forceDeleting: false });
     try {
@@ -275,6 +283,10 @@ const UserManagement = () => {
   const handleDeactivateToggle = async (userId) => {
     const user = users.find(u => u.id === userId);
     if (!user) return;
+    if (currentUser?.role === 'sub_admin' && ['admin', 'sub_admin', 'principal', 'superadmin'].includes(user.role)) {
+      toast.error('Sub-admins are not authorized to modify Administrative or Sub Admin accounts');
+      return;
+    }
     const newStatus = !user.isActive;
     const action = newStatus ? 'activate' : 'deactivate';
     if (!confirm(`Are you sure you want to ${action} this user?`)) return;
@@ -629,7 +641,7 @@ const UserManagement = () => {
                                   )}
                                   {user.id !== currentUser?.id && (
                                     <>
-                                      {['admin', 'sub_admin', 'principal', 'examination_officer', 'attendance_admin', 'superadmin'].includes(currentUser?.role) && user.role !== 'superadmin' && (
+                                      {currentUser?.role !== 'sub_admin' && ['admin', 'sub_admin', 'principal', 'examination_officer', 'attendance_admin', 'superadmin'].includes(currentUser?.role) && user.role !== 'superadmin' && (
                                         <button
                                           onClick={() => handleImpersonate(user.id)}
                                           className="p-2 bg-indigo-50 border border-indigo-200/80 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 rounded-xl transition-all shadow-sm flex items-center justify-center min-w-[36px] min-h-[36px]"
@@ -724,10 +736,10 @@ const UserManagement = () => {
                   <option value="higher_student">Student in Higher Institution</option>
                   <option value="examination_officer">Examination Officer</option>
                   <option value="attendance_admin">Attendance & Access Admin</option>
-                  <option value="principal">School Principal</option>
                   <option value="accountant">Financial Accountant</option>
-                  <option value="sub_admin">Sub Admin</option>
-                  <option value="admin">System Admin</option>
+                  {currentUser?.role !== 'sub_admin' && <option value="principal">School Principal</option>}
+                  {currentUser?.role !== 'sub_admin' && <option value="sub_admin">Sub Admin</option>}
+                  {currentUser?.role !== 'sub_admin' && <option value="admin">System Admin</option>}
                 </select>
                 {/* Singleton role warning */}
                 {!editingUser && ['admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin'].includes(formData.role) && (() => {

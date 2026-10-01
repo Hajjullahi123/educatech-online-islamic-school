@@ -110,6 +110,13 @@ router.post('/', authenticate, authorize(['admin', 'sub_admin', 'principal', 'ac
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    // Prevent sub_admins from creating administrative/sub-admin accounts
+    if (req.user && req.user.role === 'sub_admin' && ['admin', 'sub_admin', 'principal', 'superadmin'].includes(role)) {
+      return res.status(403).json({
+        error: 'Sub-admins are not authorized to create Sub Admin, Principal, or Admin accounts.'
+      });
+    }
+
     // Enforce singleton roles: only ONE admin, principal, accountant, examination_officer per school
     if (['admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin'].includes(role)) {
       const existing = await prisma.user.findFirst({
@@ -507,6 +514,15 @@ router.put('/:id', authenticate, authorize(['admin', 'sub_admin', 'principal', '
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // Prevent sub_admins from modifying administrative/sub-admin accounts or changing role to administrative
+    if (req.user && req.user.role === 'sub_admin') {
+      if (['admin', 'sub_admin', 'principal', 'superadmin'].includes(user.role) || (role && ['admin', 'sub_admin', 'principal', 'superadmin'].includes(role))) {
+        return res.status(403).json({
+          error: 'Sub-admins are not authorized to modify Sub Admin, Principal, or Admin accounts.'
+        });
+      }
+    }
+
     // Build update data
     const updateData = {
       email,
@@ -784,6 +800,13 @@ router.delete('/:id', authenticate, authorize(['admin', 'sub_admin', 'principal'
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Prevent sub_admins from deleting administrative/sub-admin accounts
+    if (req.user && req.user.role === 'sub_admin' && ['admin', 'sub_admin', 'principal', 'superadmin'].includes(user.role)) {
+      return res.status(403).json({
+        error: 'Sub-admins are not authorized to delete Sub Admin, Principal, or Admin accounts.'
+      });
     }
 
     // Server-side safety guard for teachers with dependencies

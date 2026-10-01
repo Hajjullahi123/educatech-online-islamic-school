@@ -537,7 +537,7 @@ function App() {
                 </ProtectedRoute>
               } />
               <Route path="credential-repository" element={
-                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'principal']}>
                   <CredentialRepository />
                 </ProtectedRoute>
               } />
@@ -608,7 +608,7 @@ function App() {
                 </ProtectedRoute>
               } />
               <Route path="audit-log" element={
-                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'principal']}>
                   <AuditLog />
                 </ProtectedRoute>
               } />
@@ -663,7 +663,7 @@ function App() {
                 </ProtectedRoute>
               } />
               <Route path="settings" element={
-                <ProtectedRoute roles={['admin', 'sub_admin']}>
+                <ProtectedRoute roles={['admin']}>
                   <Settings />
                 </ProtectedRoute>
               } />
@@ -673,12 +673,12 @@ function App() {
                 </ProtectedRoute>
               } />
               <Route path="billing" element={
-                <ProtectedRoute roles={['admin', 'sub_admin']}>
+                <ProtectedRoute roles={['admin']}>
                   <Billing />
                 </ProtectedRoute>
               } />
               <Route path="system-settings" element={
-                <ProtectedRoute roles={['admin', 'sub_admin']}>
+                <ProtectedRoute roles={['admin']}>
                   <SystemSettings />
                 </ProtectedRoute>
               } />
