@@ -28,7 +28,17 @@ router.get('/', authenticate, authorize(['admin', 'sub_admin', 'principal', 'acc
       include: {
         student: {
           include: {
-            classModel: true
+            classModel: true,
+            parent: {
+              include: {
+                user: {
+                  select: {
+                    email: true,
+                    phone: true
+                  }
+                }
+              }
+            }
           }
         },
         teacher: true,

@@ -148,14 +148,17 @@ const DirectoryExport = () => {
           formatTableHeader(headerRow);
 
           studentsByClass[className].forEach((u, index) => {
+            const parentPhone = u.student?.parentGuardianPhone || u.student?.parentPhone || u.student?.parent?.phone || u.student?.parent?.user?.phone || 'N/A';
+            const parentEmail = u.student?.parentEmail || u.student?.parent?.user?.email || 'N/A';
+
             ws.addRow([
               index + 1,
               u.firstName,
               u.lastName,
               u.student?.admissionNumber || 'N/A',
               u.student?.gender || 'N/A',
-              u.student?.parentPhone || 'N/A',
-              u.student?.parentEmail || 'N/A'
+              parentPhone,
+              parentEmail
             ]);
           });
           ws.addRow([]); // Spacer
