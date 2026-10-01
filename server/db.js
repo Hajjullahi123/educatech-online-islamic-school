@@ -24,27 +24,36 @@ const prisma = global.__prisma__.$extends({
     $allModels: {
       async delete({ model, args, query }) {
         if (softDeleteModels.includes(model)) {
+          const updateData = { isDeleted: true, deletedAt: new Date() };
+          if (model === 'Student') {
+            updateData.status = 'deleted';
+          }
           return global.__prisma__[model].update({
             ...args,
-            data: { isDeleted: true, deletedAt: new Date() }
+            data: updateData
           });
         }
         return query(args);
       },
       async deleteMany({ model, args, query }) {
         if (softDeleteModels.includes(model)) {
+          const updateData = { isDeleted: true, deletedAt: new Date() };
+          if (model === 'Student') {
+            updateData.status = 'deleted';
+          }
           if (args.data) {
             args.data.isDeleted = true;
             args.data.deletedAt = new Date();
+            if (model === 'Student') args.data.status = 'deleted';
           }
           return global.__prisma__[model].updateMany({
             ...args,
-            data: { isDeleted: true, deletedAt: new Date() }
+            data: updateData
           });
         }
         return query(args);
       },
-      // Automatically hide deleted records from list queries
+      // Automatically hide deleted records from list & count queries
       async findMany({ model, args, query }) {
         if (softDeleteModels.includes(model)) {
           args = args || {};
@@ -53,6 +62,27 @@ const prisma = global.__prisma__.$extends({
         return query(args);
       },
       async findFirst({ model, args, query }) {
+        if (softDeleteModels.includes(model)) {
+          args = args || {};
+          args.where = { ...(args.where || {}), isDeleted: false };
+        }
+        return query(args);
+      },
+      async count({ model, args, query }) {
+        if (softDeleteModels.includes(model)) {
+          args = args || {};
+          args.where = { ...(args.where || {}), isDeleted: false };
+        }
+        return query(args);
+      },
+      async aggregate({ model, args, query }) {
+        if (softDeleteModels.includes(model)) {
+          args = args || {};
+          args.where = { ...(args.where || {}), isDeleted: false };
+        }
+        return query(args);
+      },
+      async groupBy({ model, args, query }) {
         if (softDeleteModels.includes(model)) {
           args = args || {};
           args.where = { ...(args.where || {}), isDeleted: false };

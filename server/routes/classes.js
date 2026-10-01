@@ -46,7 +46,7 @@ router.get('/', authenticate, async (req, res) => {
         },
         _count: {
           select: {
-            students: { where: { status: 'active' } },
+            students: { where: { status: 'active', isDeleted: false } },
             subjects: true
           }
         }
@@ -118,7 +118,7 @@ router.get('/my-class', authenticate, async (req, res) => {
             }
           },
           _count: {
-            select: { students: { where: { status: 'active' } } }
+            select: { students: { where: { status: 'active', isDeleted: false } } }
           }
         },
         orderBy: [{ name: 'asc' }, { arm: 'asc' }]
@@ -185,7 +185,7 @@ router.get('/my-class', authenticate, async (req, res) => {
           }
         },
         _count: {
-          select: { students: { where: { status: 'active' } } }
+          select: { students: { where: { status: 'active', isDeleted: false } } }
         }
       }
     });

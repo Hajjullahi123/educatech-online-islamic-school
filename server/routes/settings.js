@@ -42,7 +42,7 @@ router.get('/stats-summary', authenticate, async (req, res) => {
         include: {
           _count: {
             select: {
-              students: { where: { status: 'active' } }
+              students: { where: { status: 'active', isDeleted: false } }
             }
           }
         }
@@ -69,7 +69,7 @@ router.get('/stats-summary', authenticate, async (req, res) => {
 
     // For admin/principal/superadmin, return full school metrics
     const [studentCount, subjectCount, teacherCount, classCount] = await Promise.all([
-      prisma.student.count({ where: { schoolId, status: 'active' } }),
+      prisma.student.count({ where: { schoolId, status: 'active', isDeleted: false } }),
       prisma.subject.count({ where: { schoolId } }),
       prisma.user.count({ where: { schoolId, role: 'teacher', isActive: true } }),
       prisma.class.count({ where: { schoolId, isActive: true } })
