@@ -8,22 +8,32 @@ const prisma = require('../db');
  * @param {number} currentTermId - Current term ID
  * @returns {Promise<number>} - Total outstanding balance
  */
-async function calculatePreviousOutstanding(schoolId, studentId, currentSessionId, currentTermId) {
+async function calculatePreviousOutstanding(schoolId, studentId, currentSessionId, currentTermId, dbClient = prisma) {
   try {
     const sId = Number(schoolId);
     const studId = Number(studentId);
     const termId = Number(currentTermId);
 
     // 1. Get current term to determine its start date
-    const currentTerm = await prisma.term.findUnique({
+    const currentTerm = await dbClient.term.findUnique({
       where: { id: termId }
     });
 
     if (!currentTerm) return 0;
 
-    // 2. Get ALL fee records from terms that started before this term
-    //    This ensures we catch every previous term, even if some in between are missing
-    const previousRecords = await prisma.feeRecord.findMany({
+    // 2. Find earliest record for this student to capture initial opening balance (pre-existing debt)
+    const earliestRecord = await dbClient.feeRecord.findFirst({
+      where: { schoolId: sId, studentId: studId },
+      include: { Term: true },
+      orderBy: { Term: { startDate: 'asc' } }
+    });
+
+    const initialOpening = (earliestRecord && earliestRecord.Term && earliestRecord.Term.startDate < currentTerm.startDate)
+      ? (parseFloat(earliestRecord.openingBalance) || 0)
+      : 0;
+
+    // 3. Get ALL fee records from terms that started before this term
+    const previousRecords = await dbClient.feeRecord.findMany({
       where: {
         schoolId: sId,
         studentId: studId,
@@ -37,14 +47,12 @@ async function calculatePreviousOutstanding(schoolId, studentId, currentSessionI
       }
     });
 
-    if (previousRecords.length === 0) return 0;
+    if (previousRecords.length === 0) return initialOpening;
 
-    // 3. Sum total expected and total paid across ALL previous terms
-    //    Opening balance = total owed from all previous terms
-    //    If negative, it means the student has a credit/overpayment
+    // 4. Sum total expected and total paid across ALL previous terms + initial opening balance
     const totalExpected = previousRecords.reduce((sum, r) => sum + (parseFloat(r.expectedAmount) || 0), 0);
     const totalPaid = previousRecords.reduce((sum, r) => sum + (parseFloat(r.paidAmount) || 0), 0);
-    const outstanding = totalExpected - totalPaid;
+    const outstanding = initialOpening + totalExpected - totalPaid;
 
     return outstanding;
   } catch (error) {
@@ -263,8 +271,50 @@ async function createOrUpdateFeeRecordWithOpening(data) {
   }
 }
 
+/**
+ * Recalculate student fee chain across all terms in order
+ * @param {number} schoolId - School ID
+ * @param {number} studentId - Student ID
+ * @param {object} dbClient - Prisma client or transaction client
+ */
+async function recalculateStudentFeeChain(schoolId, studentId, dbClient = prisma) {
+  try {
+    const sId = Number(schoolId);
+    const studId = Number(studentId);
+
+    const records = await dbClient.feeRecord.findMany({
+      where: { schoolId: sId, studentId: studId },
+      include: { Term: true },
+      orderBy: { Term: { startDate: 'asc' } }
+    });
+
+    if (!records || records.length === 0) return;
+
+    for (let i = 0; i < records.length; i++) {
+      const rec = records[i];
+      const openingBalance = await calculatePreviousOutstanding(sId, studId, rec.academicSessionId, rec.termId, dbClient);
+      const expected = parseFloat(rec.expectedAmount) || 0;
+      const paid = parseFloat(rec.paidAmount) || 0;
+      const balance = openingBalance + expected - paid;
+      const isClearedForExam = (balance <= 0);
+
+      await dbClient.feeRecord.update({
+        where: { id: rec.id },
+        data: {
+          openingBalance,
+          balance,
+          isClearedForExam
+        }
+      });
+    }
+  } catch (error) {
+    console.error(`Error recalculating fee chain for student ${studentId}:`, error);
+  }
+}
+
 module.exports = {
   calculatePreviousOutstanding,
   getStudentFeeSummary,
-  createOrUpdateFeeRecordWithOpening
+  createOrUpdateFeeRecordWithOpening,
+  recalculateStudentFeeChain
 };

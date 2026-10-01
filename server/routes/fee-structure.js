@@ -3,6 +3,7 @@ const router = express.Router();
 const prisma = require('../db');
 const { authenticate, authorize } = require('../middleware/auth');
 const { logAction } = require('../utils/audit');
+const { recalculateStudentFeeChain } = require('../utils/feeCalculations');
 
 // Get all fee structures (filtered by session/term)
 router.get('/', authenticate, authorize(['admin', 'accountant']), async (req, res) => {
@@ -142,6 +143,11 @@ router.post('/setup', authenticate, authorize(['admin', 'accountant']), async (r
       return { feeStructure, updatedCount, createdCount, students };
     });
 
+    // Recalculate subsequent terms for affected students
+    for (const student of students) {
+      await recalculateStudentFeeChain(parseInt(req.schoolId), student.id);
+    }
+
     res.json({
       message: 'Fee structure saved successfully',
       feeStructure,
@@ -182,23 +188,74 @@ router.post('/setup', authenticate, authorize(['admin', 'accountant']), async (r
 router.delete('/:id', authenticate, authorize(['admin', 'accountant']), async (req, res) => {
   try {
     const { id } = req.params;
+    const schoolIdInt = parseInt(req.schoolId);
 
-    await prisma.classFeeStructure.delete({
+    const structure = await prisma.classFeeStructure.findFirst({
       where: {
         id: parseInt(id),
-        schoolId: parseInt(req.schoolId)
+        schoolId: schoolIdInt
       }
     });
 
-    res.json({ message: 'Fee structure deleted successfully' });
+    if (!structure) {
+      return res.status(404).json({ error: 'Fee structure not found' });
+    }
+
+    await prisma.classFeeStructure.delete({
+      where: {
+        id: parseInt(id)
+      }
+    });
+
+    // Update fee records for all students in this class for this term/session
+    const students = await prisma.student.findMany({
+      where: {
+        classId: structure.classId,
+        schoolId: schoolIdInt
+      },
+      select: { id: true }
+    });
+
+    if (students.length > 0) {
+      const recordsToUpdate = await prisma.feeRecord.findMany({
+        where: {
+          schoolId: schoolIdInt,
+          termId: structure.termId,
+          academicSessionId: structure.academicSessionId,
+          studentId: { in: students.map(s => s.id) }
+        }
+      });
+
+      for (const rec of recordsToUpdate) {
+        const opening = parseFloat(rec.openingBalance) || 0;
+        const paid = parseFloat(rec.paidAmount) || 0;
+        const newBalance = opening + 0 - paid;
+
+        await prisma.feeRecord.update({
+          where: { id: rec.id },
+          data: {
+            expectedAmount: 0,
+            balance: newBalance,
+            isClearedForExam: (newBalance <= 0)
+          }
+        });
+      }
+
+      // Recalculate fee chain across terms for each affected student
+      for (const student of students) {
+        await recalculateStudentFeeChain(schoolIdInt, student.id);
+      }
+    }
+
+    res.json({ message: 'Fee structure deleted and student fee records updated successfully' });
 
     // Log the action
     logAction({
-      schoolId: parseInt(req.schoolId),
+      schoolId: schoolIdInt,
       userId: req.user.id,
       action: 'DELETE',
       resource: 'FEE_STRUCTURE',
-      details: { id: parseInt(id) },
+      details: { id: parseInt(id), classId: structure.classId, termId: structure.termId },
       ipAddress: req.ip
     });
   } catch (error) {

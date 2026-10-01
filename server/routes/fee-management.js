@@ -4,7 +4,7 @@ const prisma = require('../db');
 const { authenticate, authorize } = require('../middleware/auth');
 const { sendPaymentConfirmation } = require('../services/emailService');
 const { logAction } = require('../utils/audit');
-const { getStudentFeeSummary, calculatePreviousOutstanding, createOrUpdateFeeRecordWithOpening } = require('../utils/feeCalculations');
+const { getStudentFeeSummary, calculatePreviousOutstanding, createOrUpdateFeeRecordWithOpening, recalculateStudentFeeChain } = require('../utils/feeCalculations');
 
 // Get all students with fee status (Accountant/Admin)
 router.get('/students', authenticate, authorize(['admin', 'principal', 'accountant']), async (req, res) => {
@@ -116,16 +116,22 @@ router.get('/students', authenticate, authorize(['admin', 'principal', 'accounta
             startDate: { lt: targetTerm.startDate }
           }
         },
-        select: {
-          studentId: true,
-          expectedAmount: true,
-          paidAmount: true
-        }
+        include: { Term: true },
+        orderBy: { Term: { startDate: 'asc' } }
       });
 
+      const studentRecordsMap = {};
       allPreviousRecords.forEach(rec => {
-        if (!arrearsMap[rec.studentId]) arrearsMap[rec.studentId] = 0;
-        arrearsMap[rec.studentId] += (parseFloat(rec.expectedAmount) || 0) - (parseFloat(rec.paidAmount) || 0);
+        if (!studentRecordsMap[rec.studentId]) studentRecordsMap[rec.studentId] = [];
+        studentRecordsMap[rec.studentId].push(rec);
+      });
+
+      Object.keys(studentRecordsMap).forEach(studId => {
+        const recs = studentRecordsMap[studId];
+        const earliest = recs[0];
+        const initialOpening = parseFloat(earliest?.openingBalance) || 0;
+        const net = recs.reduce((sum, r) => sum + (parseFloat(r.expectedAmount) || 0) - (parseFloat(r.paidAmount) || 0), 0);
+        arrearsMap[studId] = initialOpening + net;
       });
     }
 
@@ -338,6 +344,19 @@ router.post('/record', authenticate, authorize(['admin', 'principal', 'accountan
       });
 
       if (subsequentRecords.length > 0) {
+        const earliestPriorRecord = await prisma.feeRecord.findFirst({
+          where: {
+            studentId: parseInt(studentId),
+            schoolId: parseInt(req.schoolId)
+          },
+          include: { Term: true },
+          orderBy: { Term: { startDate: 'asc' } }
+        });
+
+        const initialOpening = (earliestPriorRecord && earliestPriorRecord.Term && earliestPriorRecord.Term.startDate <= currentTermData.startDate)
+          ? (parseFloat(earliestPriorRecord.openingBalance) || 0)
+          : 0;
+
         const allPriorRecords = await prisma.feeRecord.findMany({
           where: {
             studentId: parseInt(studentId),
@@ -349,7 +368,7 @@ router.post('/record', authenticate, authorize(['admin', 'principal', 'accountan
           select: { expectedAmount: true, paidAmount: true }
         });
 
-        let runningDebt = allPriorRecords.reduce((sum, r) => sum + (r.expectedAmount || 0) - (r.paidAmount || 0), 0);
+        let runningDebt = initialOpening + allPriorRecords.reduce((sum, r) => sum + (r.expectedAmount || 0) - (r.paidAmount || 0), 0);
 
         for (const record of subsequentRecords) {
           const newOpeningBalance = runningDebt;
@@ -531,6 +550,20 @@ router.post('/payment', authenticate, authorize(['admin', 'principal', 'accounta
         orderBy: { Term: { startDate: 'asc' } }
       });
 
+      // Get earliest record for this student to capture initial opening balance
+      const earliestPriorRecord = await tx.feeRecord.findFirst({
+        where: {
+          studentId: parseInt(studentId),
+          schoolId: parseInt(req.schoolId)
+        },
+        include: { Term: true },
+        orderBy: { Term: { startDate: 'asc' } }
+      });
+
+      const initialOpening = (earliestPriorRecord && earliestPriorRecord.Term && earliestPriorRecord.Term.startDate <= feeRecord.Term.startDate)
+        ? (parseFloat(earliestPriorRecord.openingBalance) || 0)
+        : 0;
+
       // Get ALL records for this student to recalculate properly
       const allPriorRecords = await tx.feeRecord.findMany({
         where: {
@@ -543,8 +576,8 @@ router.post('/payment', authenticate, authorize(['admin', 'principal', 'accounta
         select: { expectedAmount: true, paidAmount: true }
       });
 
-      // Sum all prior debt (including the record we just updated)
-      let runningDebt = allPriorRecords.reduce((sum, r) => sum + (r.expectedAmount || 0) - (r.paidAmount || 0), 0);
+      // Sum all prior debt (including initial opening balance)
+      let runningDebt = initialOpening + allPriorRecords.reduce((sum, r) => sum + (r.expectedAmount || 0) - (r.paidAmount || 0), 0);
 
       for (const record of subsequentRecords) {
         const newOpeningBalance = runningDebt;
@@ -756,7 +789,19 @@ router.put('/payment/:paymentId', authenticate, authorize(['admin', 'principal',
         orderBy: { Term: { startDate: 'asc' } }
       });
 
-      // Get ALL records for this student up to and including current to recalculate properly
+      const earliestPriorRecord = await tx.feeRecord.findFirst({
+        where: {
+          studentId: feeRecord.studentId,
+          schoolId: parseInt(req.schoolId)
+        },
+        include: { Term: true },
+        orderBy: { Term: { startDate: 'asc' } }
+      });
+
+      const initialOpening = (earliestPriorRecord && earliestPriorRecord.Term && earliestPriorRecord.Term.startDate <= feeRecord.Term.startDate)
+        ? (parseFloat(earliestPriorRecord.openingBalance) || 0)
+        : 0;
+
       const allPriorRecords = await tx.feeRecord.findMany({
         where: {
           studentId: feeRecord.studentId,
@@ -768,7 +813,7 @@ router.put('/payment/:paymentId', authenticate, authorize(['admin', 'principal',
         select: { expectedAmount: true, paidAmount: true }
       });
 
-      let runningDebt = allPriorRecords.reduce((sum, r) => sum + (r.expectedAmount || 0) - (r.paidAmount || 0), 0);
+      let runningDebt = initialOpening + allPriorRecords.reduce((sum, r) => sum + (r.expectedAmount || 0) - (r.paidAmount || 0), 0);
 
       for (const record of subsequentRecords) {
         const newOpeningBalance = runningDebt;
@@ -869,7 +914,19 @@ router.delete('/payment/:paymentId', authenticate, authorize(['admin', 'principa
         orderBy: { Term: { startDate: 'asc' } }
       });
 
-      // Get total debt up to this term after deletion
+      const earliestPriorRecord = await tx.feeRecord.findFirst({
+        where: {
+          studentId: feeRecord.studentId,
+          schoolId: parseInt(req.schoolId)
+        },
+        include: { Term: true },
+        orderBy: { Term: { startDate: 'asc' } }
+      });
+
+      const initialOpening = (earliestPriorRecord && earliestPriorRecord.Term && earliestPriorRecord.Term.startDate <= feeRecord.Term.startDate)
+        ? (parseFloat(earliestPriorRecord.openingBalance) || 0)
+        : 0;
+
       const allPriorRecords = await tx.feeRecord.findMany({
         where: {
           studentId: feeRecord.studentId,
@@ -881,7 +938,7 @@ router.delete('/payment/:paymentId', authenticate, authorize(['admin', 'principa
         select: { expectedAmount: true, paidAmount: true }
       });
 
-      let runningDebt = allPriorRecords.reduce((sum, r) => sum + (r.expectedAmount || 0) - (r.paidAmount || 0), 0);
+      let runningDebt = initialOpening + allPriorRecords.reduce((sum, r) => sum + (r.expectedAmount || 0) - (r.paidAmount || 0), 0);
 
       for (const record of subsequentRecords) {
         const newOpeningBalance = runningDebt;
@@ -1329,24 +1386,57 @@ router.get('/summary', authenticate, authorize(['admin', 'principal', 'accountan
       else notPaid++;
     }
 
-    // 4. Calculate GRAND TOTAL balance across ALL terms for ALL active students.
-    // FIX: Sum (expected - paid) across every fee record, not just the latest one.
-    // This ensures students who owe from previous terms but have no current record are included.
+    // 4. Calculate GRAND TOTAL balance across ALL terms for ALL active students accurately.
     const allActiveStudents = await prisma.student.findMany({
       where: { schoolId: schoolIdInt, status: 'active' },
       include: {
         FeeRecord: {
-          select: { expectedAmount: true, paidAmount: true }
+          include: { Term: true },
+          orderBy: { Term: { startDate: 'asc' } }
         }
       }
     });
 
-    const grandTotalBalance = allActiveStudents.reduce((sum, s) => {
-      const studentTotal = (s.FeeRecord || []).reduce((rSum, r) => {
-        return rSum + ((r.expectedAmount || 0) - (r.paidAmount || 0));
-      }, 0);
-      return sum + studentTotal;
-    }, 0);
+    const allTerms = await prisma.term.findMany({
+      where: { schoolId: schoolIdInt },
+      orderBy: { startDate: 'asc' }
+    });
+
+    const allFeeStructures = await prisma.classFeeStructure.findMany({
+      where: { schoolId: schoolIdInt }
+    });
+
+    const fullStructureMap = {};
+    allFeeStructures.forEach(fs => {
+      fullStructureMap[`${fs.classId}_${fs.termId}_${fs.academicSessionId}`] = fs.amount;
+    });
+
+    let grandTotalBalance = 0;
+
+    for (const student of allActiveStudents) {
+      const records = student.FeeRecord || [];
+      const recordedTermIds = new Set(records.map(r => r.termId));
+
+      const earliestRecord = records[0];
+      const initialOpening = earliestRecord ? (parseFloat(earliestRecord.openingBalance) || 0) : 0;
+      const realRecordsNet = records.reduce((sum, r) => sum + (parseFloat(r.expectedAmount) || 0) - (parseFloat(r.paidAmount) || 0), 0);
+
+      let virtualNet = 0;
+      if (!student.isScholarship) {
+        for (const term of allTerms) {
+          if (!recordedTermIds.has(term.id)) {
+            const joinedAfterTerm = !shouldIgnoreJoinDate && student.createdAt > term.endDate;
+            if (!joinedAfterTerm) {
+              const expected = fullStructureMap[`${student.classId}_${term.id}_${term.academicSessionId}`] || 0;
+              const discount = parseFloat(student.feeDiscount) || 0;
+              virtualNet += Math.max(0, expected - discount);
+            }
+          }
+        }
+      }
+
+      grandTotalBalance += initialOpening + realRecordsNet + virtualNet;
+    }
 
     res.json({
       totalStudents,
@@ -1535,6 +1625,9 @@ router.post('/sync-records', authenticate, authorize(['admin', 'principal', 'acc
           expectedAmount: stAmount,
           paidAmount: existing ? existing.paidAmount : 0
         });
+
+        // Recalculate full term chain for this student
+        await recalculateStudentFeeChain(schoolIdInt, student.id);
 
         if (!existing) {
           createdCount++;
