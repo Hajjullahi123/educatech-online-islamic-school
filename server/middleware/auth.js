@@ -88,9 +88,29 @@ const optionalAuth = (req, res, next) => {
   next();
 };
 
+// Section scope middleware for sub-admins
+const attachSectionScope = async (req, res, next) => {
+  try {
+    if (req.user && req.user.id && ['sub_admin', 'admin'].includes(req.user.role)) {
+      const prisma = require('../db');
+      const sectionAssignments = await prisma.sectionAdminAccess.findMany({
+        where: { userId: req.user.id },
+        select: { sectionId: true }
+      });
+      if (sectionAssignments && sectionAssignments.length > 0) {
+        req.assignedSectionIds = sectionAssignments.map(a => a.sectionId);
+      }
+    }
+  } catch (err) {
+    console.error('Error attaching section scope:', err);
+  }
+  next();
+};
+
 module.exports = {
   authenticate,
   authorize,
   optionalAuth,
+  attachSectionScope,
   JWT_SECRET
 };

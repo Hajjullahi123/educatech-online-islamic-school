@@ -405,6 +405,7 @@ const broadsheetRoutes = require('./routes/broadsheet');
 const hrRoutes = require('./routes/hr');
 const pushRoutes = require('./routes/push');
 const customPagesRoutes = require('./routes/custom-pages');
+const sectionRoutes = require('./routes/sections');
 
 console.log('[Server] All route modules imported.');
 
@@ -436,6 +437,7 @@ app.use('/api/advanced-analytics', authenticate, checkSubscription, advancedAnal
 app.use('/api/academic-sessions', authenticate, checkSubscription, academicSessionRoutes);
 app.use('/api/terms', authenticate, checkSubscription, termRoutes);
 app.use('/api/classes', authenticate, checkSubscription, classRoutes);
+app.use('/api/sections', authenticate, checkSubscription, sectionRoutes);
 app.use('/api/class-subjects', authenticate, checkSubscription, classSubjectRoutes);
 app.use('/api/assignments', authenticate, checkSubscription, assignmentRoutes);
 app.use('/api/bulk-results', authenticate, checkSubscription, bulkResultRoutes);

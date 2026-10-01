@@ -256,6 +256,7 @@ model School {
   NewsletterSubscriber        NewsletterSubscriber[]
   AdmissionApplication        AdmissionApplication[]
   AdmissionExamQuestion       AdmissionExamQuestion[]
+  sections                    Section[]
 }
 
 model User {
@@ -314,6 +315,7 @@ model User {
   hrMessages         HRMessage[]
   processedHRMessages HRMessage[]         @relation("MessageProcessor")
   departmentResources DepartmentResource[] @relation("ResourceUploader")
+  sectionAccess       SectionAdminAccess[]
 
   @@unique([schoolId, username])
   @@unique([schoolId, email])
@@ -459,6 +461,8 @@ model Class {
   test1Weight            Int?
   test2Weight            Int?
   examWeight             Int?
+  sectionId              Int?
+  section                Section?            @relation(fields: [sectionId], references: [id], onDelete: SetNull)
   attendanceRecords      AttendanceRecord[]
   CBTExam                CBTExam[]
   classTeacher           User?               @relation("ClassTeacher", fields: [classTeacherId], references: [id])
@@ -1821,4 +1825,37 @@ model AdmissionExamQuestion {
   School        School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   @@index([schoolId])
+}
+
+model Section {
+  id                Int                  @id @default(autoincrement())
+  schoolId          Int
+  name              String
+  code              String?
+  assignment1Weight Int                  @default(5)
+  assignment2Weight Int                  @default(5)
+  test1Weight       Int                  @default(10)
+  test2Weight       Int                  @default(10)
+  examWeight        Int                  @default(70)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  School            School               @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  classes           Class[]
+  adminAccess       SectionAdminAccess[]
+
+  @@unique([schoolId, name])
+  @@index([schoolId])
+}
+
+model SectionAdminAccess {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  sectionId Int
+  createdAt DateTime @default(now())
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Section   Section  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sectionId])
+  @@index([userId])
+  @@index([sectionId])
 }
