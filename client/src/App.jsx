@@ -161,7 +161,7 @@ function ExamCardSwitch() {
     const token = localStorage.getItem('token');
     if (token) {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      if (['admin', 'examination_officer', 'accountant'].includes(payload.role)) {
+      if (['admin', 'sub_admin', 'examination_officer', 'accountant'].includes(payload.role)) {
         return <ExamCardManagement />;
       }
     }
@@ -264,7 +264,7 @@ function App() {
               <Route path="results" element={<ResultManager />} />
               <Route path="report-card" element={<ReportCard />} />
               <Route path="parent-view" element={
-                <ProtectedRoute roles={['admin', 'parent', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'parent', 'principal']}>
                   <ParentDashboard />
                 </ProtectedRoute>
               } />
@@ -272,114 +272,114 @@ function App() {
               <Route path="advanced-analytics" element={<AdvancedAnalytics />} />
               <Route path="class-analytics" element={<AdvancedAnalytics />} />
               <Route path="attendance-tracker" element={
-                <ProtectedRoute roles={['admin', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'examination_officer']}>
                   <AttendanceTracker />
                 </ProtectedRoute>
               } />
               <Route path="exam-tracker" element={
-                <ProtectedRoute roles={['admin', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'examination_officer']}>
                   <ExamSubmissionTracker />
                 </ProtectedRoute>
               } />
 
               {/* Teacher Routes */}
               <Route path="result-entry" element={
-                <ProtectedRoute roles={['admin', 'teacher', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'principal', 'examination_officer']}>
                   <ResultEntry />
                 </ProtectedRoute>
               } />
               <Route path="attendance" element={
-                <ProtectedRoute roles={['admin', 'teacher', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'principal', 'examination_officer']}>
                   <Attendance />
                 </ProtectedRoute>
               } />
               <Route path="timetable" element={
-                <ProtectedRoute roles={['admin', 'teacher', 'student', 'parent', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'student', 'parent', 'principal', 'examination_officer']}>
                   <Timetable />
                 </ProtectedRoute>
               } />
               <Route path="homework" element={
-                <ProtectedRoute roles={['admin', 'teacher', 'student', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'student', 'principal']}>
                   <Homework />
                 </ProtectedRoute>
               } />
               <Route path="resources" element={
-                <ProtectedRoute roles={['admin', 'teacher', 'student', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'student', 'principal']}>
                   <LearningResources />
                 </ProtectedRoute>
               } />
               <Route path="bulk-result-upload" element={
-                <ProtectedRoute roles={['admin', 'teacher', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'principal', 'examination_officer']}>
                   <BulkResultUpload />
                 </ProtectedRoute>
               } />
               <Route path="bulk-report-download" element={
-                <ProtectedRoute roles={['admin', 'teacher', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'principal', 'examination_officer']}>
                   <BulkReportDownload />
                 </ProtectedRoute>
               } />
               <Route path="broadsheet" element={
-                <ProtectedRoute roles={['admin', 'teacher', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'principal', 'examination_officer']}>
                   <BroadsheetDownload />
                 </ProtectedRoute>
               } />
               <Route path="cbt-management" element={
-                <ProtectedRoute roles={['admin', 'teacher', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'principal', 'examination_officer']}>
                   <CBTManagement />
                 </ProtectedRoute>
               } />
               <Route path="cbt-bank" element={
-                <ProtectedRoute roles={['admin', 'teacher', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'principal', 'examination_officer']}>
                   <CBTQuestionBank />
                 </ProtectedRoute>
               } />
               <Route path="gate-scan" element={
-                <ProtectedRoute roles={['admin', 'principal', 'teacher', 'examination_officer', 'attendance_admin']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'teacher', 'examination_officer', 'attendance_admin']}>
                   <ArrivalScanner />
                 </ProtectedRoute>
               } />
               <Route path="bulk-student-upload" element={
-                <ProtectedRoute roles={['admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin']}>
                   <BulkStudentUpload />
                 </ProtectedRoute>
               } />
               <Route path="bulk-staff-upload" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <BulkStaffUpload />
                 </ProtectedRoute>
               } />
               <Route path="staff-attendance" element={
-                <ProtectedRoute roles={['admin', 'principal', 'examination_officer', 'attendance_admin']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'examination_officer', 'attendance_admin']}>
                   <StaffAttendanceReport />
                 </ProtectedRoute>
               } />
               <Route path="attendance-rules" element={
-                <ProtectedRoute roles={['admin', 'principal', 'attendance_admin']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'attendance_admin']}>
                   <StaffAttendanceConfig />
                 </ProtectedRoute>
               } />
               <Route path="teacher/messages" element={
-                <ProtectedRoute roles={['admin', 'teacher', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'principal']}>
                   <TeacherMessages />
                 </ProtectedRoute>
               } />
               <Route path="quran-tracker" element={
-                <ProtectedRoute roles={['admin', 'teacher', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'principal']}>
                   <QuranTracker />
                 </ProtectedRoute>
               } />
               <Route path="academic-workspace" element={
-                <ProtectedRoute roles={['admin', 'teacher', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'principal']}>
                   <LessonWorkspace />
                 </ProtectedRoute>
               } />
               <Route path="exam-repository" element={
-                <ProtectedRoute roles={['admin', 'teacher', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'principal', 'examination_officer']}>
                   <ExamRepository />
                 </ProtectedRoute>
               } />
               <Route path="curriculum-management" element={
-                <ProtectedRoute roles={['admin', 'teacher', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'principal']}>
                   <CurriculumManagement />
                 </ProtectedRoute>
               } />
@@ -389,29 +389,29 @@ function App() {
                 </ProtectedRoute>
               } />
               <Route path="hr-admin" element={
-                <ProtectedRoute roles={['admin', 'hr_admin', 'superadmin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'hr_admin', 'superadmin', 'principal']}>
                   <HRAdminDashboard />
                 </ProtectedRoute>
               } />
 
               {/* Student Routes */}
               <Route path="term-report" element={
-                <ProtectedRoute roles={['admin', 'student', 'teacher', 'parent', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'student', 'teacher', 'parent', 'principal', 'examination_officer']}>
                   <TermReportCard />
                 </ProtectedRoute>
               } />
               <Route path="cumulative-report" element={
-                <ProtectedRoute roles={['admin', 'student', 'teacher', 'parent', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'student', 'teacher', 'parent', 'principal', 'examination_officer']}>
                   <CumulativeReport />
                 </ProtectedRoute>
               } />
               <Route path="progressive-report" element={
-                <ProtectedRoute roles={['admin', 'student', 'teacher', 'parent', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'student', 'teacher', 'parent', 'principal', 'examination_officer']}>
                   <ProgressiveReport />
                 </ProtectedRoute>
               } />
               <Route path="exam-card" element={
-                <ProtectedRoute roles={['student', 'admin', 'accountant', 'teacher', 'examination_officer']}>
+                <ProtectedRoute roles={['student', 'admin', 'sub_admin', 'accountant', 'teacher', 'examination_officer']}>
                   <ExamCardSwitch />
                 </ProtectedRoute>
               } />
@@ -421,32 +421,32 @@ function App() {
                 </ProtectedRoute>
               } />
               <Route path="id-cards" element={
-                <ProtectedRoute roles={['admin', 'teacher', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'examination_officer']}>
                   <IDCardGenerator />
                 </ProtectedRoute>
               } />
               <Route path="document-branding" element={
-                <ProtectedRoute roles={['admin', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'examination_officer']}>
                   <DocumentBranding />
                 </ProtectedRoute>
               } />
               <Route path="profile" element={
-                <ProtectedRoute roles={['admin', 'teacher', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'principal', 'examination_officer']}>
                   <TeacherProfile />
                 </ProtectedRoute>
               } />
               <Route path="student/profile" element={
-                <ProtectedRoute roles={['admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin', 'student', 'parent']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin', 'student', 'parent']}>
                   <StudentProfile />
                 </ProtectedRoute>
               } />
               <Route path="my-class" element={
-                <ProtectedRoute roles={['admin', 'teacher', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'principal', 'examination_officer']}>
                   <MyClass />
                 </ProtectedRoute>
               } />
               <Route path="my-students" element={
-                <ProtectedRoute roles={['admin', 'teacher', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'principal', 'examination_officer']}>
                   <MyStudents />
                 </ProtectedRoute>
               } />
@@ -471,244 +471,244 @@ function App() {
                 </ProtectedRoute>
               } />
               <Route path="alumni" element={
-                <ProtectedRoute roles={['alumni', 'admin']}>
+                <ProtectedRoute roles={['alumni', 'admin', 'sub_admin']}>
                   <AlumniDashboard />
                 </ProtectedRoute>
               } />
 
               {/* Parent Routes */}
               <Route path="parent/attendance" element={
-                <ProtectedRoute roles={['admin', 'parent', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'parent', 'principal']}>
                   <ParentAttendanceView />
                 </ProtectedRoute>
               } />
               <Route path="parent/messages" element={
-                <ProtectedRoute roles={['admin', 'parent', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'parent', 'principal']}>
                   <ParentMessages />
                 </ProtectedRoute>
               } />
               <Route path="parent/quran" element={
-                <ProtectedRoute roles={['admin', 'parent', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'parent', 'principal']}>
                   <ParentQuranView />
                 </ProtectedRoute>
               } />
 
               {/* Accountant Routes */}
               <Route path="fees" element={
-                <ProtectedRoute roles={['admin', 'accountant', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'accountant', 'principal']}>
                   <FeeManagement />
                 </ProtectedRoute>
               } />
               <Route path="fee-structure" element={
-                <ProtectedRoute roles={['admin', 'accountant', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'accountant', 'principal']}>
                   <FeeStructureSetup />
                 </ProtectedRoute>
               } />
               <Route path="quick-fee-setup" element={
-                <ProtectedRoute roles={['admin', 'accountant', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'accountant', 'principal']}>
                   <QuickFeeSetup />
                 </ProtectedRoute>
               } />
               <Route path="misc-fees" element={
-                <ProtectedRoute roles={['admin', 'accountant', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'accountant', 'principal']}>
                   <MiscellaneousFees />
                 </ProtectedRoute>
               } />
               <Route path="misc-fee-payments" element={
-                <ProtectedRoute roles={['admin', 'accountant', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'accountant', 'principal']}>
                   <MiscFeePayments />
                 </ProtectedRoute>
               } />
 
               {/* Admin Routes */}
               <Route path="users" element={
-                <ProtectedRoute roles={['admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin']}>
                   <UserManagement />
                 </ProtectedRoute>
               } />
               <Route path="directory-export" element={
-                <ProtectedRoute roles={['admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin']}>
                   <DirectoryExport />
                 </ProtectedRoute>
               } />
               <Route path="student-management" element={
-                <ProtectedRoute roles={['admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin']}>
                   <StudentManagement />
                 </ProtectedRoute>
               } />
               <Route path="credential-repository" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <CredentialRepository />
                 </ProtectedRoute>
               } />
               <Route path="promotions" element={
-                <ProtectedRoute roles={['admin', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'examination_officer']}>
                   <PromotionManager />
                 </ProtectedRoute>
               } />
               <Route path="holidays" element={
-                <ProtectedRoute roles={['admin', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'examination_officer']}>
                   <HolidayManager />
                 </ProtectedRoute>
               } />
               <Route path="promotion-history" element={
-                <ProtectedRoute roles={['admin', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'examination_officer']}>
                   <PromotionHistory />
                 </ProtectedRoute>
               } />
               <Route path="benchmarking" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <BenchmarkingDashboard />
                 </ProtectedRoute>
               } />
               <Route path="academic-setup" element={
-                <ProtectedRoute roles={['admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin']}>
                   <AcademicSetup />
                 </ProtectedRoute>
               } />
               <Route path="school-setup" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <SchoolSetupUpload />
                 </ProtectedRoute>
               } />
               <Route path="class-management" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <ClassManagement />
                 </ProtectedRoute>
               } />
               <Route path="period-setup" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <PeriodSetup />
                 </ProtectedRoute>
               } />
               <Route path="subject-management" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <SubjectManagement />
                 </ProtectedRoute>
               } />
               <Route path="teacher-assignments" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <TeacherAssignments />
                 </ProtectedRoute>
               } />
               <Route path="teacher-availability" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <TeacherAvailability />
                 </ProtectedRoute>
               } />
               <Route path="class-subjects" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <ClassSubjects />
                 </ProtectedRoute>
               } />
 
               <Route path="manage-notices" element={
-                <ProtectedRoute roles={['admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin']}>
                   <NoticeBoard />
                 </ProtectedRoute>
               } />
               <Route path="audit-log" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <AuditLog />
                 </ProtectedRoute>
               } />
               <Route path="manage-parents" element={
-                <ProtectedRoute roles={['admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin']}>
                   <ParentManagement />
                 </ProtectedRoute>
               } />
               <Route path="alumni-management" element={
-                <ProtectedRoute roles={['admin', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'examination_officer']}>
                   <AlumniManagement />
                 </ProtectedRoute>
               } />
               <Route path="transcript/:studentId" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <TranscriptView />
                 </ProtectedRoute>
               } />
               <Route path="certificate/:studentId" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <CertificateView />
                 </ProtectedRoute>
               } />
               <Route path="testimonial/:studentId" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <TestimonialView />
                 </ProtectedRoute>
               } />
               <Route path="bulk-certificates/:year" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <BulkCertificateView />
                 </ProtectedRoute>
               } />
               <Route path="bulk-testimonials/:year" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <BulkTestimonialView />
                 </ProtectedRoute>
               } />
               <Route path="history-bulk-certificates/:classId/:sessionId" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <HistoryBulkCertificateView />
                 </ProtectedRoute>
               } />
               <Route path="history-bulk-testimonials/:classId/:sessionId" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <HistoryBulkTestimonialView />
                 </ProtectedRoute>
               } />
               <Route path="advanced-analytics" element={
-                <ProtectedRoute roles={['admin', 'teacher', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'principal', 'examination_officer']}>
                   <AdvancedAnalytics />
                 </ProtectedRoute>
               } />
               <Route path="settings" element={
-                <ProtectedRoute roles={['admin']}>
+                <ProtectedRoute roles={['admin', 'sub_admin']}>
                   <Settings />
                 </ProtectedRoute>
               } />
               <Route path="admissions" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <AdmissionsManagement />
                 </ProtectedRoute>
               } />
               <Route path="billing" element={
-                <ProtectedRoute roles={['admin']}>
+                <ProtectedRoute roles={['admin', 'sub_admin']}>
                   <Billing />
                 </ProtectedRoute>
               } />
               <Route path="system-settings" element={
-                <ProtectedRoute roles={['admin']}>
+                <ProtectedRoute roles={['admin', 'sub_admin']}>
                   <SystemSettings />
                 </ProtectedRoute>
               } />
               <Route path="news-events-management" element={
-                <ProtectedRoute roles={['admin', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'examination_officer']}>
                   <NewsEventsManagement />
                 </ProtectedRoute>
               } />
               <Route path="gallery-management" element={
-                <ProtectedRoute roles={['admin', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'examination_officer']}>
                   <GalleryManagement />
                 </ProtectedRoute>
               } />
               <Route path="custom-pages" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <CustomPages />
                 </ProtectedRoute>
               } />
               <Route path="password-reset" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <PasswordReset />
                 </ProtectedRoute>
               } />
               <Route path="exam-config" element={
-                <ProtectedRoute roles={['admin', 'principal', 'examination_officer']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'examination_officer']}>
                   <ExamConfig />
                 </ProtectedRoute>
               } />
               <Route path="departments" element={
-                <ProtectedRoute roles={['admin', 'principal']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <Suspense fallback={<LoadingFallback />}>
                     <DepartmentManagement />
                   </Suspense>
