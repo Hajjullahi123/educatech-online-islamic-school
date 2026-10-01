@@ -318,12 +318,11 @@ router.post('/identify', validate(identifySchema), async (req, res) => {
       return res.status(400).json({ error: 'Valid identifier is required' });
     }
 
-    // Superadmin fast-path (no schoolSlug needed)
+    // Superadmin fast-path (no schoolSlug needed, regardless of schoolId in DB)
     try {
       const superadmin = await prisma.user.findFirst({
         where: {
           role: 'superadmin',
-          schoolId: null,
           OR: [
             ...idVariants.map(id => ({ username: { equals: id, mode: 'insensitive' } })),
             ...idVariants.map(id => ({ email: { equals: id, mode: 'insensitive' } }))
@@ -341,6 +340,7 @@ router.post('/identify', validate(identifySchema), async (req, res) => {
     // 1. PERFORM STRICT EXACT MATCH LOOKUP FIRST
     const userSelect = { 
       schoolId: true,
+      role: true,
       school: { 
         select: { id: true, name: true, slug: true, logoUrl: true } 
       } 
@@ -359,7 +359,8 @@ router.post('/identify', validate(identifySchema), async (req, res) => {
         where: { 
           OR: [
             ...idVariants.map(id => ({ username: { equals: id, mode: 'insensitive' } })),
-            ...idVariants.map(id => ({ email: { equals: id, mode: 'insensitive' } }))
+            ...idVariants.map(id => ({ email: { equals: id, mode: 'insensitive' } })),
+            ...phoneVariants.map(p => ({ phone: { contains: p } }))
           ] 
         },
         select: userSelect
@@ -367,7 +368,10 @@ router.post('/identify', validate(identifySchema), async (req, res) => {
       prisma.student.findMany({
         where: { 
           OR: [
-            ...idVariants.map(id => ({ admissionNumber: { equals: id, mode: 'insensitive' } }))
+            ...idVariants.map(id => ({ admissionNumber: { equals: id, mode: 'insensitive' } })),
+            ...idVariants.map(id => ({ parentEmail: { equals: id, mode: 'insensitive' } })),
+            ...phoneVariants.map(p => ({ parentPhone: { contains: p } })),
+            ...phoneVariants.map(p => ({ parentGuardianPhone: { contains: p } }))
           ]
         },
         select: studentSelect
@@ -376,7 +380,8 @@ router.post('/identify', validate(identifySchema), async (req, res) => {
         where: { 
           OR: [
             ...idVariants.map(id => ({ staffId: { equals: id, mode: 'insensitive' } })),
-            ...idVariants.map(id => ({ publicEmail: { equals: id, mode: 'insensitive' } }))
+            ...idVariants.map(id => ({ publicEmail: { equals: id, mode: 'insensitive' } })),
+            ...phoneVariants.map(p => ({ publicPhone: { contains: p } }))
           ]
         },
         select: {
@@ -468,6 +473,13 @@ router.post('/identify', validate(identifySchema), async (req, res) => {
           select: studentSelect
         });
       } catch (e) {}
+    }
+
+    // Check if any matched user has superadmin role
+    for (const match of [...globalUserMatches, ...studentMatches, ...teacherMatches, ...rollNoMatches]) {
+      if (match?.role === 'superadmin') {
+        return res.json({ schools: [], count: 0, globalAccess: true, message: 'Global admin detected' });
+      }
     }
 
     // Aggregate all matching schools and missing school IDs
@@ -570,6 +582,113 @@ router.post('/identify', validate(identifySchema), async (req, res) => {
   }
 });
 
+// Helper function to resolve user within a specific school
+async function findUserInSchool(schoolId, searchId, idVariants, phoneVariants, userSelect) {
+  let user = await prisma.user.findFirst({
+    where: {
+      schoolId,
+      OR: [
+        ...idVariants.map(id => ({ username: { equals: id, mode: 'insensitive' } })),
+        ...idVariants.filter(id => id.length >= 3).map(id => ({ username: { startsWith: id, mode: 'insensitive' } }))
+      ]
+    },
+    select: userSelect
+  });
+
+  if (!user) {
+    user = await prisma.user.findFirst({
+      where: {
+        schoolId,
+        email: { equals: searchId, mode: 'insensitive' }
+      },
+      select: userSelect
+    });
+  }
+
+  if (!user && phoneVariants.length > 0) {
+    user = await prisma.user.findFirst({
+      where: {
+        schoolId,
+        OR: [
+          ...phoneVariants.map(p => ({ phone: { contains: p } })),
+          ...phoneVariants.map(p => ({ Parent: { phone: { contains: p } } }))
+        ]
+      },
+      select: userSelect
+    });
+  }
+
+  if (!user) {
+    const [studentRecord, teacherRecord] = await Promise.all([
+      prisma.student.findFirst({
+        where: {
+          schoolId,
+          OR: [
+            ...idVariants.map(id => ({ admissionNumber: { equals: id, mode: 'insensitive' } })),
+            ...idVariants.filter(id => id.length >= 3).map(id => ({ admissionNumber: { startsWith: id, mode: 'insensitive' } })),
+            ...idVariants.filter(id => id.length >= 3).map(id => ({ admissionNumber: { endsWith: id, mode: 'insensitive' } })),
+            ...idVariants.filter(id => id.length >= 4).map(id => ({ admissionNumber: { contains: id, mode: 'insensitive' } })),
+            ...phoneVariants.map(p => ({ parentPhone: { contains: p } })),
+            ...phoneVariants.map(p => ({ parentGuardianPhone: { contains: p } }))
+          ]
+        },
+        select: { id: true, userId: true, name: true, admissionNumber: true, user: { select: userSelect } }
+      }).catch(err => null),
+      prisma.teacher.findFirst({
+        where: {
+          schoolId,
+          OR: [
+            ...idVariants.map(id => ({ staffId: { equals: id, mode: 'insensitive' } })),
+            ...idVariants.filter(id => id.length >= 3).map(id => ({ staffId: { startsWith: id, mode: 'insensitive' } })),
+            ...idVariants.filter(id => id.length >= 4).map(id => ({ staffId: { contains: id, mode: 'insensitive' } }))
+          ]
+        },
+        select: { id: true, userId: true, staffId: true, user: { select: userSelect } }
+      }).catch(err => null)
+    ]);
+
+    let rollNoRecord = null;
+    if (!studentRecord) {
+      try {
+        rollNoRecord = await prisma.student.findFirst({
+          where: {
+            schoolId,
+            OR: [
+              ...idVariants.map(id => ({ rollNo: { equals: id, mode: 'insensitive' } })),
+              ...idVariants.filter(id => id.length >= 3).map(id => ({ rollNo: { startsWith: id, mode: 'insensitive' } })),
+              ...idVariants.filter(id => id.length >= 3).map(id => ({ rollNo: { endsWith: id, mode: 'insensitive' } }))
+            ]
+          },
+          select: { id: true, userId: true, name: true, admissionNumber: true, user: { select: userSelect } }
+        });
+      } catch (e) {}
+    }
+
+    const matchedStudent = studentRecord || rollNoRecord;
+    user = matchedStudent?.user || teacherRecord?.user;
+
+    if (!user && (matchedStudent || teacherRecord)) {
+      const admNo = matchedStudent?.admissionNumber || teacherRecord?.staffId;
+      if (admNo) {
+        user = await prisma.user.findFirst({
+          where: {
+            schoolId,
+            OR: [
+              { username: { equals: admNo, mode: 'insensitive' } },
+              ...(matchedStudent?.name ? [
+                { firstName: { contains: matchedStudent.name.split(' ')[0], mode: 'insensitive' } }
+              ] : [])
+            ]
+          },
+          select: userSelect
+        });
+      }
+    }
+  }
+
+  return user;
+}
+
 // Login endpoint
 router.post('/login', validate(loginSchema), async (req, res) => {
   try {
@@ -579,170 +698,118 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     const idVariants = getIdentifierVariants(searchId);
     const phoneVariants = getPhoneVariants(searchId);
 
-    let user;
-    if (!schoolSlug) {
-      // Global login (superadmin)
-      user = await prisma.user.findFirst({
-        where: {
-          username: { equals: searchId, mode: 'insensitive' },
-          schoolId: null,
-          role: 'superadmin'
-        },
-        include: { school: true }
-      });
-    } else {
-      // School-specific login
-      const school = await prisma.school.findUnique({ 
-        where: { slug: schoolSlug },
-        select: { id: true } 
-      });
-      if (!school) return res.status(404).json({ error: 'Invalid school domain' });
-
-      // Minimal payload selection for faster queries
-      const userSelect = {
-        id: true,
-        username: true,
-        passwordHash: true,
-        role: true,
-        firstName: true,
-        lastName: true,
-        schoolId: true,
-        signatureUrl: true,
-        mustChangePassword: true,
-        photoUrl: true,
-        isActive: true,
-        departmentAsHead: { select: { id: true, name: true } },
-        school: {
-          select: {
-            name: true,
-            slug: true,
-            logoUrl: true,
-            isActivated: true
-          }
+    const userSelect = {
+      id: true,
+      username: true,
+      passwordHash: true,
+      role: true,
+      firstName: true,
+      lastName: true,
+      schoolId: true,
+      signatureUrl: true,
+      mustChangePassword: true,
+      photoUrl: true,
+      isActive: true,
+      departmentAsHead: { select: { id: true, name: true } },
+      school: {
+        select: {
+          name: true,
+          slug: true,
+          logoUrl: true,
+          isActivated: true
         }
-      };
-
-      // FAST PATH 1: Try username lookup (exact match or variant)
-      user = await prisma.user.findFirst({
-        where: {
-          schoolId: school.id,
-          OR: [
-            ...idVariants.map(id => ({ username: { equals: id, mode: 'insensitive' } })),
-            ...idVariants.filter(id => id.length >= 3).map(id => ({ username: { startsWith: id, mode: 'insensitive' } }))
-          ]
-        },
-        select: userSelect
-      });
-
-      // FAST PATH 2: Try email lookup
-      if (!user) {
-        user = await prisma.user.findFirst({
-          where: {
-            schoolId: school.id,
-            email: { equals: searchId, mode: 'insensitive' }
-          },
-          select: userSelect
-        });
       }
+    };
 
-      // FAST PATH 3: Try phone lookup (across User and Parent models)
-      if (!user && phoneVariants.length > 0) {
-        user = await prisma.user.findFirst({
+    let user;
+
+    // STEP 1: Superadmin check (matches username or email for any superadmin)
+    user = await prisma.user.findFirst({
+      where: {
+        role: 'superadmin',
+        OR: [
+          ...idVariants.map(id => ({ username: { equals: id, mode: 'insensitive' } })),
+          ...idVariants.map(id => ({ email: { equals: id, mode: 'insensitive' } }))
+        ]
+      },
+      select: userSelect
+    });
+
+    // STEP 2: Non-superadmin lookup
+    if (!user) {
+      if (schoolSlug) {
+        const school = await prisma.school.findUnique({ 
+          where: { slug: schoolSlug },
+          select: { id: true } 
+        });
+        if (!school) return res.status(404).json({ error: 'Invalid school domain' });
+
+        user = await findUserInSchool(school.id, searchId, idVariants, phoneVariants, userSelect);
+      } else {
+        // Global search when schoolSlug is not passed
+        const userMatches = await prisma.user.findMany({
           where: {
-            schoolId: school.id,
             OR: [
-              ...phoneVariants.map(p => ({ phone: { contains: p } })),
-              ...phoneVariants.map(p => ({ Parent: { phone: { contains: p } } }))
+              ...idVariants.map(id => ({ username: { equals: id, mode: 'insensitive' } })),
+              ...idVariants.map(id => ({ email: { equals: id, mode: 'insensitive' } }))
             ]
           },
           select: userSelect
         });
-      }
 
-      // SLOW PATH: Check Student & Teacher models by ID numbers, rollNo, parent contacts
-      if (!user) {
-        const [studentRecord, teacherRecord] = await Promise.all([
-          prisma.student.findFirst({
-            where: {
-              schoolId: school.id,
-              OR: [
-                ...idVariants.map(id => ({ admissionNumber: { equals: id, mode: 'insensitive' } })),
-                ...idVariants.filter(id => id.length >= 3).map(id => ({ admissionNumber: { startsWith: id, mode: 'insensitive' } })),
-                ...idVariants.filter(id => id.length >= 3).map(id => ({ admissionNumber: { endsWith: id, mode: 'insensitive' } })),
-                ...idVariants.filter(id => id.length >= 4).map(id => ({ admissionNumber: { contains: id, mode: 'insensitive' } })),
-                ...phoneVariants.map(p => ({ parentPhone: { contains: p } })),
-                ...phoneVariants.map(p => ({ parentGuardianPhone: { contains: p } }))
-              ]
-            },
-            select: { id: true, userId: true, name: true, admissionNumber: true, user: { select: userSelect } }
-          }).catch(err => {
-            console.error('[Login] Student findFirst error:', err.message);
-            return null;
-          }),
-          prisma.teacher.findFirst({
-            where: {
-              schoolId: school.id,
-              OR: [
-                ...idVariants.map(id => ({ staffId: { equals: id, mode: 'insensitive' } })),
-                ...idVariants.filter(id => id.length >= 3).map(id => ({ staffId: { startsWith: id, mode: 'insensitive' } })),
-                ...idVariants.filter(id => id.length >= 4).map(id => ({ staffId: { contains: id, mode: 'insensitive' } }))
-              ]
-            },
-            select: { id: true, userId: true, staffId: true, user: { select: userSelect } }
-          }).catch(err => {
-            console.error('[Login] Teacher findFirst error:', err.message);
-            return null;
-          })
-        ]);
-
-        // Optional rollNo fallback check for student
-        let rollNoRecord = null;
-        if (!studentRecord) {
-          try {
-            rollNoRecord = await prisma.student.findFirst({
+        if (userMatches.length === 1) {
+          user = userMatches[0];
+        } else if (userMatches.length > 1) {
+          return res.status(400).json({ error: 'Multiple accounts match this username. Please select your school first.' });
+        } else {
+          if (phoneVariants.length > 0) {
+            const phoneMatches = await prisma.user.findMany({
               where: {
-                schoolId: school.id,
                 OR: [
-                  ...idVariants.map(id => ({ rollNo: { equals: id, mode: 'insensitive' } })),
-                  ...idVariants.filter(id => id.length >= 3).map(id => ({ rollNo: { startsWith: id, mode: 'insensitive' } })),
-                  ...idVariants.filter(id => id.length >= 3).map(id => ({ rollNo: { endsWith: id, mode: 'insensitive' } }))
-                ]
-              },
-              select: { id: true, userId: true, name: true, admissionNumber: true, user: { select: userSelect } }
-            });
-          } catch (e) {
-            // Ignore if rollNo column does not exist
-          }
-        }
-
-        // Get user from linked record
-        const matchedStudent = studentRecord || rollNoRecord;
-        user = matchedStudent?.user || teacherRecord?.user;
-
-        // If student/teacher record exists but userId is null (not linked to a User login account yet),
-        // try finding a User record in the same school by username matching admissionNumber or student name
-        if (!user && (matchedStudent || teacherRecord)) {
-          const admNo = matchedStudent?.admissionNumber || teacherRecord?.staffId;
-          if (admNo) {
-            user = await prisma.user.findFirst({
-              where: {
-                schoolId: school.id,
-                OR: [
-                  { username: { equals: admNo, mode: 'insensitive' } },
-                  ...(matchedStudent?.name ? [
-                    { firstName: { contains: matchedStudent.name.split(' ')[0], mode: 'insensitive' } }
-                  ] : [])
+                  ...phoneVariants.map(p => ({ phone: { contains: p } })),
+                  ...phoneVariants.map(p => ({ Parent: { phone: { contains: p } } }))
                 ]
               },
               select: userSelect
             });
+            if (phoneMatches.length === 1) {
+              user = phoneMatches[0];
+            } else if (phoneMatches.length > 1) {
+              return res.status(400).json({ error: 'Multiple accounts match this phone number. Please select your school first.' });
+            }
           }
 
           if (!user) {
-            console.error('[Auth] Login failed: Profile found but has no linked User login account. Identifier:', searchId);
-            return res.status(401).json({ 
-              error: 'Your profile exists in the school database, but your user login account has not been activated yet. Please contact your school administrator to enable your portal account.' 
-            });
+            const [studentMatches, teacherMatches] = await Promise.all([
+              prisma.student.findMany({
+                where: {
+                  OR: [
+                    ...idVariants.map(id => ({ admissionNumber: { equals: id, mode: 'insensitive' } })),
+                    ...idVariants.filter(id => id.length >= 3).map(id => ({ admissionNumber: { startsWith: id, mode: 'insensitive' } })),
+                    ...phoneVariants.map(p => ({ parentPhone: { contains: p } }))
+                  ]
+                },
+                select: { id: true, user: { select: userSelect } }
+              }).catch(() => []),
+              prisma.teacher.findMany({
+                where: {
+                  OR: [
+                    ...idVariants.map(id => ({ staffId: { equals: id, mode: 'insensitive' } })),
+                    ...idVariants.filter(id => id.length >= 3).map(id => ({ staffId: { startsWith: id, mode: 'insensitive' } }))
+                  ]
+                },
+                select: { id: true, user: { select: userSelect } }
+              }).catch(() => [])
+            ]);
+
+            const matchedUsers = [...studentMatches, ...teacherMatches].map(m => m.user).filter(Boolean);
+            const uniqueUsers = Array.from(new Map(matchedUsers.map(u => [u.id, u])).values());
+
+            if (uniqueUsers.length === 1) {
+              user = uniqueUsers[0];
+            } else if (uniqueUsers.length > 1) {
+              return res.status(400).json({ error: 'Multiple accounts match this ID. Please select your school first.' });
+            }
           }
         }
       }
