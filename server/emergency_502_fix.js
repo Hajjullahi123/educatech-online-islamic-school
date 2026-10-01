@@ -35,8 +35,12 @@ async function shrinkDatabase() {
     }
 
     console.log(`✅ Success: Cleared ${clearedCount} large Base64 strings.`);
-    console.log('Running VACUUM to reclaim space...');
-    await prisma.$executeRawUnsafe('VACUUM;');
+    try {
+      console.log('Running VACUUM to reclaim space...');
+      await prisma.$executeRawUnsafe('VACUUM;');
+    } catch (vacuumErr) {
+      console.warn('VACUUM skipped or failed (expected on PostgreSQL):', vacuumErr.message);
+    }
     console.log('--- System should now be stable (502 should stop) ---');
 
   } catch (error) {

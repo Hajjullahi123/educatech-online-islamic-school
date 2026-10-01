@@ -28,11 +28,11 @@ sed -i 's|url      = "file:./dev.db"|url      = env("DATABASE_URL")|g' prisma/sc
 
 # 4. Generate Prisma Client
 echo ">>> Generating Prisma Client..."
-npx prisma generate --schema=prisma/schema.prisma
+./node_modules/.bin/prisma generate --schema=prisma/schema.prisma
 
 # 5. Pre-migration: Drop stale unique indexes and clear corrupted data
 echo ">>> Pre-migration cleanup..."
-npx prisma db execute --schema=prisma/schema.prisma --stdin <<'SQL'
+./node_modules/.bin/prisma db execute --schema=prisma/schema.prisma --stdin <<'SQL'
 -- Drop stale indexes
 DROP INDEX IF EXISTS "StaffAttendance_schoolId_userId_date_key";
 DROP INDEX IF EXISTS "Student_schoolId_admissionNumber_key";
@@ -78,7 +78,7 @@ SQL
 
 # 6. Synchronize Database (Force push for Dev/Stage)
 echo ">>> Synchronizing database schema..."
-npx prisma db push --accept-data-loss --schema=prisma/schema.prisma
+./node_modules/.bin/prisma db push --accept-data-loss --schema=prisma/schema.prisma
 
 # 6. Database sync complete
 echo ">>> Build complete!"
