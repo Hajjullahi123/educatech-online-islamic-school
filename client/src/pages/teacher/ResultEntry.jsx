@@ -78,16 +78,21 @@ const ResultEntry = () => {
     if (classIdParam) setSelectedClass(classIdParam);
     if (subjectIdParam) setSelectedSubject(subjectIdParam);
     if (sessionIdParam) setSelectedSession(sessionIdParam);
-    if (termIdParam) setSelectedTerm(termIdParam);
+    // Only set term from URL if it's a valid non-empty value
+    if (termIdParam && termIdParam.trim() !== '') setSelectedTerm(termIdParam);
   }, [location, user]);
 
   // Fetch Students & Results when criteria are met
   useEffect(() => {
-    if (selectedClass && selectedSubject && selectedTerm) {
+    // Always clear previous results immediately to prevent showing stale scores
+    setResults({});
+
+    // Only fetch if all criteria are met AND selectedTerm is a valid numeric ID
+    const termIsValid = selectedTerm && selectedTerm.toString().trim() !== '' && !isNaN(parseInt(selectedTerm));
+    if (selectedClass && selectedSubject && termIsValid) {
       fetchStudentsAndResults();
     } else {
       setStudents([]);
-      setResults({});
       setSelectedClassData(null);
     }
   }, [selectedClass, selectedSubject, selectedTerm]);
@@ -123,9 +128,11 @@ const ResultEntry = () => {
       const data = await response.json();
       const termsArr = Array.isArray(data) ? data : [];
       setTerms(termsArr);
-      // Auto-select current term if not already set
-      if (!selectedTerm) {
-        const current = termsArr.find(t => t.isCurrent) || termsArr[0];
+      // Auto-select current term if not already set (empty string is also "not set")
+      const termIsAlreadySet = selectedTerm && selectedTerm.toString().trim() !== '' && !isNaN(parseInt(selectedTerm));
+      if (!termIsAlreadySet) {
+        // Prefer the current (active) term — never fall back to an arbitrary first term
+        const current = termsArr.find(t => t.isCurrent);
         if (current) setSelectedTerm(current.id);
       }
     } catch (error) {
