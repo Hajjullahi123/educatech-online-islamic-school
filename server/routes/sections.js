@@ -144,13 +144,20 @@ router.post('/', authenticate, authorize(['admin', 'principal', 'superadmin']), 
 });
 
 // PUT /api/sections/:id - Update section weights or name
-router.put('/:id', authenticate, authorize(['admin', 'principal', 'superadmin']), async (req, res) => {
+router.put('/:id', authenticate, authorize(['admin', 'sub_admin', 'principal', 'superadmin']), async (req, res) => {
   try {
     const { id } = req.params;
     const schoolIdInt = parseInt(req.schoolId);
     const { name, code, assignment1Weight, assignment2Weight, test1Weight, test2Weight, examWeight } = req.body;
 
     const sectionId = parseInt(id);
+
+    // Sub-Admin Section Scope Validation
+    if (req.user.role === 'sub_admin' && req.assignedSectionIds && req.assignedSectionIds.length > 0) {
+      if (!req.assignedSectionIds.includes(sectionId)) {
+        return res.status(403).json({ error: 'Access denied: You are not assigned to configure this section.' });
+      }
+    }
 
     const existing = await prisma.section.findFirst({
       where: { id: sectionId, schoolId: schoolIdInt }

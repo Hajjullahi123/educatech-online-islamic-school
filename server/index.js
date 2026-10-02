@@ -437,7 +437,7 @@ app.use('/api/advanced-analytics', authenticate, checkSubscription, advancedAnal
 app.use('/api/academic-sessions', authenticate, checkSubscription, academicSessionRoutes);
 app.use('/api/terms', authenticate, checkSubscription, termRoutes);
 app.use('/api/classes', authenticate, attachSectionScope, checkSubscription, classRoutes);
-app.use('/api/sections', authenticate, checkSubscription, sectionRoutes);
+app.use('/api/sections', authenticate, attachSectionScope, checkSubscription, sectionRoutes);
 app.use('/api/class-subjects', authenticate, checkSubscription, classSubjectRoutes);
 app.use('/api/assignments', authenticate, checkSubscription, assignmentRoutes);
 app.use('/api/bulk-results', authenticate, checkSubscription, bulkResultRoutes);

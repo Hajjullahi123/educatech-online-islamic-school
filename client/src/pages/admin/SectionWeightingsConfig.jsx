@@ -345,7 +345,12 @@ const SectionWeightingsConfig = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sections.map((sec) => {
+          {sections.length === 0 ? (
+            <div className="col-span-full p-8 text-center bg-slate-50 border border-slate-200 rounded-3xl font-bold text-slate-500">
+              No sections assigned to your account.
+            </div>
+          ) : (
+            sections.map((sec) => {
             const caTotal = Number(sec.assignment1Weight || 0) + Number(sec.assignment2Weight || 0) + Number(sec.test1Weight || 0) + Number(sec.test2Weight || 0);
             const examTotal = Number(sec.examWeight || 0);
             const grandTotal = caTotal + examTotal;
@@ -447,7 +452,7 @@ const SectionWeightingsConfig = () => {
                 </div>
               </div>
             );
-          })}
+          }))}
         </div>
       </div>
 
