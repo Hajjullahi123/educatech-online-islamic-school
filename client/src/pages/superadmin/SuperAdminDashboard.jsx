@@ -714,18 +714,18 @@ const SuperAdminDashboard = () => {
                           </div>
                         </td>
                         <td className="p-4">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <button
                               onClick={() => { setEditingSchool(s); setShowEditModal(true); }}
                               title="Edit Details"
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-blue-100"
+                              className="p-2.5 bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white rounded-xl transition-all border border-blue-200 shadow-xs"
                             >
                               <FiEdit2 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => { setSelectedSchoolForLicense(s); setShowLicenseModal(true); setGeneratedKey(null); }}
                               title="Issue License"
-                              className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-indigo-100"
+                              className="p-2.5 bg-indigo-100 text-indigo-700 hover:bg-indigo-600 hover:text-white rounded-xl transition-all border border-indigo-200 shadow-xs"
                             >
                               <FiKey className="w-4 h-4" />
                             </button>
@@ -735,21 +735,21 @@ const SuperAdminDashboard = () => {
                                 setShowCredsModal(true);
                               }}
                               title="Print Creds"
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-blue-100"
+                              className="p-2.5 bg-sky-100 text-sky-700 hover:bg-sky-600 hover:text-white rounded-xl transition-all border border-sky-200 shadow-xs"
                             >
                               <FiPrinter className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleImpersonate(s.id)}
                               title="Troubleshooting Login (Impersonate)"
-                              className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors border border-emerald-100"
+                              className="p-2.5 bg-emerald-100 text-emerald-800 hover:bg-emerald-600 hover:text-white rounded-xl transition-all border border-emerald-200 shadow-xs"
                             >
                               <FiUserCheck className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleResetAdminCreds(s.id, s.name)}
                               title="Reset Admin Password"
-                              className={`p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors border border-amber-100 ${reseting ? 'opacity-50' : ''}`}
+                              className={`p-2.5 bg-amber-100 text-amber-800 hover:bg-amber-600 hover:text-white rounded-xl transition-all border border-amber-200 shadow-xs ${reseting ? 'opacity-50' : ''}`}
                               disabled={reseting}
                             >
                               <FiUnlock className={`w-4 h-4 ${reseting ? 'animate-pulse' : ''}`} />
@@ -757,13 +757,13 @@ const SuperAdminDashboard = () => {
                             <button
                               onClick={() => handleToggleActivation(s.id, s.name, s.isActivated)}
                               title={s.isActivated ? "Deactivate" : "Activate"}
-                              className={`p-2 rounded-lg transition-colors border ${s.isActivated ? 'text-rose-600 hover:bg-rose-50 border-rose-100' : 'text-emerald-600 hover:bg-emerald-50 border-emerald-100'}`}
+                              className={`p-2.5 rounded-xl transition-all border shadow-xs ${s.isActivated ? 'bg-rose-100 text-rose-700 hover:bg-rose-600 hover:text-white border-rose-200' : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-600 hover:text-white border-emerald-200'}`}
                             >
                               <FiPower className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDeleteSchool(s.id, s.name, s.slug)}
-                              className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-rose-100"
+                              className="p-2.5 bg-red-100 text-red-700 hover:bg-red-600 hover:text-white rounded-xl transition-all border border-red-200 shadow-xs"
                               title="Delete School"
                             >
                               <FiTrash2 className="w-4 h-4" />
