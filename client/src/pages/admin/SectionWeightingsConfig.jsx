@@ -30,7 +30,11 @@ const SectionWeightingsConfig = () => {
     assignment2Weight: 5,
     test1Weight: 10,
     test2Weight: 10,
-    examWeight: 70
+    examWeight: 70,
+    expectedArrivalTime: '07:30',
+    lateCutoffTime: '08:15',
+    lateGraceMinutes: 15,
+    attendanceDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
   });
 
   // Modal State for Sub-Admin Section Assignment
@@ -74,7 +78,22 @@ const SectionWeightingsConfig = () => {
 
       if (sectionsRes.ok) {
         const secData = await sectionsRes.json();
-        setSections(Array.isArray(secData) ? secData : []);
+        const normalized = Array.isArray(secData) ? secData.map(s => {
+          let days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+          if (s.attendanceDays) {
+            try {
+              days = typeof s.attendanceDays === 'string' ? JSON.parse(s.attendanceDays) : s.attendanceDays;
+            } catch (e) {}
+          }
+          return {
+            ...s,
+            expectedArrivalTime: s.expectedArrivalTime || '07:30',
+            lateCutoffTime: s.lateCutoffTime || '08:15',
+            lateGraceMinutes: s.lateGraceMinutes ?? 15,
+            attendanceDays: days
+          };
+        }) : [];
+        setSections(normalized);
       }
 
       if (usersRes.ok) {
@@ -122,7 +141,11 @@ const SectionWeightingsConfig = () => {
           assignment2Weight: 5,
           test1Weight: 10,
           test2Weight: 10,
-          examWeight: 70
+          examWeight: 70,
+          expectedArrivalTime: '07:30',
+          lateCutoffTime: '08:15',
+          lateGraceMinutes: 15,
+          attendanceDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
         });
         fetchData();
       } else {
@@ -416,6 +439,95 @@ const SectionWeightingsConfig = () => {
                       onChange={(e) => setSections(sections.map(s => s.id === sec.id ? { ...s, examWeight: Number(e.target.value) } : s))}
                       className="w-full text-center py-1.5 bg-indigo-50 border border-indigo-300 rounded-xl font-black text-indigo-950 focus:bg-white focus:ring-2 focus:ring-indigo-500"
                     />
+                  </div>
+                </div>
+
+                {/* Section Attendance Rules & Active Days */}
+                <div className="pt-3 border-t border-slate-100 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase text-indigo-900 tracking-wider flex items-center gap-1">
+                      📅 Active Attendance Days
+                    </span>
+                    <div className="flex gap-1 text-[9px] font-bold text-slate-500">
+                      <button
+                        type="button"
+                        onClick={() => setSections(sections.map(s => s.id === sec.id ? { ...s, attendanceDays: ['Monday','Tuesday','Wednesday','Thursday','Friday'] } : s))}
+                        className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-700"
+                      >
+                        Mon-Fri
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSections(sections.map(s => s.id === sec.id ? { ...s, attendanceDays: ['Saturday','Sunday'] } : s))}
+                        className="px-1.5 py-0.5 bg-amber-100 hover:bg-amber-200 rounded text-amber-900"
+                      >
+                        Sat-Sun
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1">
+                    {[
+                      { day: 'Sunday', label: 'Sun' },
+                      { day: 'Monday', label: 'Mon' },
+                      { day: 'Tuesday', label: 'Tue' },
+                      { day: 'Wednesday', label: 'Wed' },
+                      { day: 'Thursday', label: 'Thu' },
+                      { day: 'Friday', label: 'Fri' },
+                      { day: 'Saturday', label: 'Sat' }
+                    ].map(({ day, label }) => {
+                      const activeDays = Array.isArray(sec.attendanceDays) ? sec.attendanceDays : [];
+                      const isSelected = activeDays.includes(day);
+                      return (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() => {
+                            const updatedDays = isSelected
+                              ? activeDays.filter(d => d !== day)
+                              : [...activeDays, day];
+                            setSections(sections.map(s => s.id === sec.id ? { ...s, attendanceDays: updatedDays } : s));
+                          }}
+                          className={`flex-1 min-w-[34px] py-1 text-[10px] font-black rounded-lg border transition-all ${
+                            isSelected
+                              ? 'bg-indigo-600 text-white border-indigo-700 shadow-xs'
+                              : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div>
+                      <label className="block text-[9px] uppercase font-black text-slate-500 mb-0.5">Arrival Time</label>
+                      <input
+                        type="time"
+                        value={sec.expectedArrivalTime || '07:30'}
+                        onChange={(e) => setSections(sections.map(s => s.id === sec.id ? { ...s, expectedArrivalTime: e.target.value } : s))}
+                        className="w-full text-center py-1 bg-slate-50 border border-slate-300 rounded-xl font-bold text-xs text-slate-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] uppercase font-black text-slate-500 mb-0.5">Late Cutoff</label>
+                      <input
+                        type="time"
+                        value={sec.lateCutoffTime || '08:15'}
+                        onChange={(e) => setSections(sections.map(s => s.id === sec.id ? { ...s, lateCutoffTime: e.target.value } : s))}
+                        className="w-full text-center py-1 bg-slate-50 border border-slate-300 rounded-xl font-bold text-xs text-slate-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] uppercase font-black text-slate-500 mb-0.5">Grace (Mins)</label>
+                      <input
+                        type="number"
+                        value={sec.lateGraceMinutes ?? 15}
+                        onChange={(e) => setSections(sections.map(s => s.id === sec.id ? { ...s, lateGraceMinutes: Number(e.target.value) } : s))}
+                        className="w-full text-center py-1 bg-slate-50 border border-slate-300 rounded-xl font-bold text-xs text-slate-900"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -846,6 +958,93 @@ const SectionWeightingsConfig = () => {
                       value={sectionForm.examWeight}
                       onChange={(e) => setSectionForm({ ...sectionForm, examWeight: Number(e.target.value) })}
                       className="w-full text-center py-2 bg-indigo-50 border border-indigo-300 rounded-xl font-black text-indigo-900"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Attendance Active Days & Rules */}
+              <div className="space-y-3 pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-black uppercase text-slate-700">Active Attendance Days *</label>
+                  <div className="flex gap-1 text-[10px] font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setSectionForm({ ...sectionForm, attendanceDays: ['Monday','Tuesday','Wednesday','Thursday','Friday'] })}
+                      className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-700"
+                    >
+                      Mon-Fri
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSectionForm({ ...sectionForm, attendanceDays: ['Saturday','Sunday'] })}
+                      className="px-2 py-0.5 bg-amber-100 hover:bg-amber-200 rounded text-amber-900"
+                    >
+                      Sat-Sun
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { day: 'Sunday', label: 'Sun' },
+                    { day: 'Monday', label: 'Mon' },
+                    { day: 'Tuesday', label: 'Tue' },
+                    { day: 'Wednesday', label: 'Wed' },
+                    { day: 'Thursday', label: 'Thu' },
+                    { day: 'Friday', label: 'Fri' },
+                    { day: 'Saturday', label: 'Sat' }
+                  ].map(({ day, label }) => {
+                    const activeDays = Array.isArray(sectionForm.attendanceDays) ? sectionForm.attendanceDays : [];
+                    const isSelected = activeDays.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => {
+                          const updatedDays = isSelected
+                            ? activeDays.filter(d => d !== day)
+                            : [...activeDays, day];
+                          setSectionForm({ ...sectionForm, attendanceDays: updatedDays });
+                        }}
+                        className={`flex-1 py-1.5 text-xs font-black rounded-xl border transition-all ${
+                          isSelected
+                            ? 'bg-indigo-600 text-white border-indigo-700 shadow-xs'
+                            : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 pt-1 text-center">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Arrival Time</label>
+                    <input
+                      type="time"
+                      value={sectionForm.expectedArrivalTime}
+                      onChange={(e) => setSectionForm({ ...sectionForm, expectedArrivalTime: e.target.value })}
+                      className="w-full text-center py-1.5 bg-slate-50 border rounded-xl font-bold text-xs text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Late Cutoff</label>
+                    <input
+                      type="time"
+                      value={sectionForm.lateCutoffTime}
+                      onChange={(e) => setSectionForm({ ...sectionForm, lateCutoffTime: e.target.value })}
+                      className="w-full text-center py-1.5 bg-slate-50 border rounded-xl font-bold text-xs text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Grace (Mins)</label>
+                    <input
+                      type="number"
+                      value={sectionForm.lateGraceMinutes}
+                      onChange={(e) => setSectionForm({ ...sectionForm, lateGraceMinutes: Number(e.target.value) })}
+                      className="w-full text-center py-1.5 bg-slate-50 border rounded-xl font-bold text-xs text-slate-900"
                     />
                   </div>
                 </div>

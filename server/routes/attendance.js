@@ -145,10 +145,50 @@ router.get('/class/:classId', authenticate, authorize(['admin', 'sub_admin', 'te
       };
     });
 
-    // Check if the requested date is a holiday or weekend based on school settings
+    // SECTION & CLASS ATTENDANCE RULES CHECK
+    const targetClass = await prisma.class.findFirst({
+      where: { id: parseInt(classId), schoolId: req.schoolId },
+      include: { section: true }
+    });
+
     const dayOfWeek = queryDate.getUTCDay();
     let isHoliday = false;
     let holidayInfo = null;
+    let sectionRules = null;
+
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const currentDayName = dayNames[dayOfWeek];
+
+    if (targetClass?.section) {
+      let parsedActiveDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+      if (targetClass.section.attendanceDays) {
+        try {
+          parsedActiveDays = typeof targetClass.section.attendanceDays === 'string'
+            ? JSON.parse(targetClass.section.attendanceDays)
+            : targetClass.section.attendanceDays;
+        } catch (e) {
+          console.error('[ATTENDANCE] Error parsing section attendanceDays:', e);
+        }
+      }
+
+      sectionRules = {
+        sectionId: targetClass.section.id,
+        sectionName: targetClass.section.name,
+        expectedArrivalTime: targetClass.section.expectedArrivalTime || '07:30',
+        lateCutoffTime: targetClass.section.lateCutoffTime || '08:15',
+        lateGraceMinutes: targetClass.section.lateGraceMinutes ?? 15,
+        attendanceDays: parsedActiveDays
+      };
+
+      if (Array.isArray(parsedActiveDays) && parsedActiveDays.length > 0 && !parsedActiveDays.includes(currentDayName)) {
+        isHoliday = true;
+        holidayInfo = {
+          name: `${targetClass.section.name} Inactive Day (${currentDayName})`,
+          type: 'section_inactive_day',
+          description: `${currentDayName} is configured as an inactive attendance day for ${targetClass.section.name}.`
+        };
+      }
+    }
 
     // Fetch school settings for weekend configuration
     const school = await prisma.school.findUnique({
@@ -157,16 +197,13 @@ router.get('/class/:classId', authenticate, authorize(['admin', 'sub_admin', 'te
     });
 
     // Determine weekend indices, defaulting to Sunday (0) and Saturday (6) if not set
-    // Important: Handle empty string case where split(',') results in ['']
     const weekendDaysRaw = school?.weekendDays || "";
     const weekendIndices = weekendDaysRaw.split(',')
       .map(n => n.trim())
       .filter(n => n !== "")
       .map(n => parseInt(n));
-      
-    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-    if (weekendIndices.includes(dayOfWeek)) {
+    if (weekendIndices.includes(dayOfWeek) && !isHoliday) {
       isHoliday = true;
       holidayInfo = {
         name: dayNames[dayOfWeek],
@@ -179,7 +216,6 @@ router.get('/class/:classId', authenticate, authorize(['admin', 'sub_admin', 'te
     });
 
     if (holidayRecord) {
-      // Prioritize dynamic weekend configuration for records of type 'weekend'
       if (holidayRecord.type === 'weekend') {
         if (weekendIndices.includes(dayOfWeek)) {
           isHoliday = true;
@@ -188,12 +224,8 @@ router.get('/class/:classId', authenticate, authorize(['admin', 'sub_admin', 'te
             type: 'weekend',
             description: holidayRecord.description
           };
-        } else {
-          // If it's a weekend record but NOT a configured weekend, 
-          // we ignore it and keep isHoliday based on weekendIndices (which covers the case where it was set but now removed)
         }
       } else {
-        // Real holidays or non-weekend types always override
         isHoliday = true;
         holidayInfo = {
           name: holidayRecord.name,
@@ -208,6 +240,7 @@ router.get('/class/:classId', authenticate, authorize(['admin', 'sub_admin', 'te
       students: result,
       isHoliday,
       holidayInfo,
+      sectionRules,
       session: session ? { id: session.id, name: session.name } : null,
       term: term ? { id: term.id, name: term.name, startDate: term.startDate, endDate: term.endDate } : null
     });
@@ -222,12 +255,10 @@ router.get('/class/:classId', authenticate, authorize(['admin', 'sub_admin', 'te
 router.post('/mark', authenticate, authorize(['admin', 'sub_admin', 'teacher', 'principal', 'attendance_admin', 'accountant', 'examination_officer']), async (req, res) => {
   try {
     const { classId, date, records, adminOverride } = req.body;
-    // records: [{ studentId: 1, status: 'present', notes: '' }, ...]
 
     // SERVER-SIDE LOCK CHECK
     let targetDate;
     if (date) {
-      // Create UTC date from YYYY-MM-DD to avoid timezone shifting
       const [year, month, day] = date.split('-');
       targetDate = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), 0, 0, 0));
     } else {
@@ -241,8 +272,32 @@ router.post('/mark', authenticate, authorize(['admin', 'sub_admin', 'teacher', '
       return res.status(403).json({ error: 'Marking window closed. Attendance for this date is locked (48h limit).' });
     }
 
-    // HOLIDAY / WEEKEND CHECK (Global check for all users)
+    // SECTION ACTIVE DAYS CHECK
+    const targetClass = await prisma.class.findFirst({
+      where: { id: parseInt(classId), schoolId: req.schoolId },
+      include: { section: true }
+    });
+
     const dayOfWeek = targetDate.getUTCDay();
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const currentDayName = dayNames[dayOfWeek];
+
+    if (targetClass?.section?.attendanceDays) {
+      let parsedActiveDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+      try {
+        parsedActiveDays = typeof targetClass.section.attendanceDays === 'string'
+          ? JSON.parse(targetClass.section.attendanceDays)
+          : targetClass.section.attendanceDays;
+      } catch (e) {}
+
+      if (Array.isArray(parsedActiveDays) && parsedActiveDays.length > 0 && !parsedActiveDays.includes(currentDayName) && !adminOverride) {
+        return res.status(403).json({
+          error: `Cannot mark attendance. ${currentDayName} is an inactive attendance day for section "${targetClass.section.name}".`
+        });
+      }
+    }
+
+    // HOLIDAY / WEEKEND CHECK (Global check for all users)
     // Fetch school settings for weekend configuration
     const school = await prisma.school.findUnique({
       where: { id: req.schoolId },

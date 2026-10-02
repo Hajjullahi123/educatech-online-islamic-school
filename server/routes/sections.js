@@ -94,7 +94,19 @@ router.get('/', authenticate, async (req, res) => {
 router.post('/', authenticate, authorize(['admin', 'principal', 'superadmin']), async (req, res) => {
   try {
     const schoolIdInt = parseInt(req.schoolId);
-    const { name, code, assignment1Weight = 5, assignment2Weight = 5, test1Weight = 10, test2Weight = 10, examWeight = 70 } = req.body;
+    const {
+      name,
+      code,
+      assignment1Weight = 5,
+      assignment2Weight = 5,
+      test1Weight = 10,
+      test2Weight = 10,
+      examWeight = 70,
+      expectedArrivalTime = '07:30',
+      lateCutoffTime = '08:15',
+      lateGraceMinutes = 15,
+      attendanceDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Section name is required' });
@@ -111,6 +123,8 @@ router.post('/', authenticate, authorize(['admin', 'principal', 'superadmin']), 
       return res.status(400).json({ error: `Total assessment weights must equal 100%. Current sum: ${total}%` });
     }
 
+    const daysStr = Array.isArray(attendanceDays) ? JSON.stringify(attendanceDays) : (typeof attendanceDays === 'string' ? attendanceDays : '["Monday","Tuesday","Wednesday","Thursday","Friday"]');
+
     const section = await prisma.section.create({
       data: {
         schoolId: schoolIdInt,
@@ -120,7 +134,11 @@ router.post('/', authenticate, authorize(['admin', 'principal', 'superadmin']), 
         assignment2Weight: a2,
         test1Weight: t1,
         test2Weight: t2,
-        examWeight: ex
+        examWeight: ex,
+        expectedArrivalTime: expectedArrivalTime || '07:30',
+        lateCutoffTime: lateCutoffTime || '08:15',
+        lateGraceMinutes: parseInt(lateGraceMinutes) || 15,
+        attendanceDays: daysStr
       }
     });
 
@@ -143,12 +161,24 @@ router.post('/', authenticate, authorize(['admin', 'principal', 'superadmin']), 
   }
 });
 
-// PUT /api/sections/:id - Update section weights or name
+// PUT /api/sections/:id - Update section weights, attendance rules, or name
 router.put('/:id', authenticate, authorize(['admin', 'sub_admin', 'principal', 'superadmin']), async (req, res) => {
   try {
     const { id } = req.params;
     const schoolIdInt = parseInt(req.schoolId);
-    const { name, code, assignment1Weight, assignment2Weight, test1Weight, test2Weight, examWeight } = req.body;
+    const {
+      name,
+      code,
+      assignment1Weight,
+      assignment2Weight,
+      test1Weight,
+      test2Weight,
+      examWeight,
+      expectedArrivalTime,
+      lateCutoffTime,
+      lateGraceMinutes,
+      attendanceDays
+    } = req.body;
 
     const sectionId = parseInt(id);
 
@@ -178,6 +208,11 @@ router.put('/:id', authenticate, authorize(['admin', 'sub_admin', 'principal', '
       return res.status(400).json({ error: `Total assessment weights must equal 100%. Current sum: ${total}%` });
     }
 
+    let daysStr = existing.attendanceDays;
+    if (attendanceDays !== undefined) {
+      daysStr = Array.isArray(attendanceDays) ? JSON.stringify(attendanceDays) : (typeof attendanceDays === 'string' ? attendanceDays : existing.attendanceDays);
+    }
+
     const updated = await prisma.section.update({
       where: { id: sectionId },
       data: {
@@ -187,7 +222,11 @@ router.put('/:id', authenticate, authorize(['admin', 'sub_admin', 'principal', '
         assignment2Weight: a2,
         test1Weight: t1,
         test2Weight: t2,
-        examWeight: ex
+        examWeight: ex,
+        expectedArrivalTime: expectedArrivalTime !== undefined ? expectedArrivalTime : existing.expectedArrivalTime,
+        lateCutoffTime: lateCutoffTime !== undefined ? lateCutoffTime : existing.lateCutoffTime,
+        lateGraceMinutes: lateGraceMinutes !== undefined ? (parseInt(lateGraceMinutes) || 15) : existing.lateGraceMinutes,
+        attendanceDays: daysStr
       }
     });
 

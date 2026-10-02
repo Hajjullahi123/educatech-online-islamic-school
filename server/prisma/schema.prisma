@@ -1836,8 +1836,12 @@ model Section {
   assignment2Weight Int                  @default(5)
   test1Weight       Int                  @default(10)
   test2Weight       Int                  @default(10)
-  examWeight        Int                  @default(70)
-  createdAt         DateTime             @default(now())
+  examWeight            Int                  @default(70)
+  expectedArrivalTime   String?              @default("07:30")
+  lateCutoffTime        String?              @default("08:15")
+  lateGraceMinutes      Int                  @default(15)
+  attendanceDays        String?              @default("[\"Monday\",\"Tuesday\",\"Wednesday\",\"Thursday\",\"Friday\"]")
+  createdAt             DateTime             @default(now())
   updatedAt         DateTime             @updatedAt
   School            School               @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   classes           Class[]
