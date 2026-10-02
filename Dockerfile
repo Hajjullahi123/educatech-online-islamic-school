@@ -14,6 +14,11 @@ WORKDIR /app
 # Throw-away build stage to reduce size of final image
 FROM base AS build
 
+# Install OpenSSL in build stage so prisma generate detects the correct openssl-3.x version
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y openssl && \
+    rm -rf /var/lib/apt/lists/*
+
 # Ensure devDependencies are installed during build stage
 ENV NODE_ENV=development
 
