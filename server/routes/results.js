@@ -14,9 +14,10 @@ router.get('/', authenticate, async (req, res) => {
     if (studentId) where.studentId = parseInt(studentId);
     if (examId) where.examId = parseInt(examId);
 
-    // Section scope: restrict to results for students in allowed classes
+    // Section scope: restrict to results for classes within the sub-admin's assigned sections
+    // Result has a direct classId field — no need to join through student
     if (req.allowedClassIds && req.allowedClassIds.length > 0) {
-      where.student = { classId: { in: req.allowedClassIds } };
+      where.classId = { in: req.allowedClassIds };
     }
 
     const results = await prisma.result.findMany({

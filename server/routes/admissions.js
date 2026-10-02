@@ -1048,7 +1048,9 @@ router.post('/admin/create-candidate', authenticate, async (req, res) => {
  * @route   GET /api/admissions/admin/list
  * @desc    Retrieve admissions applications for the current school.
  *          Sub-admins with section restrictions only see applications
- *          whose gradeLevel matches a class name within their assign router.get('/admin/list', authenticate, async (req, res) => {
+  *          whose gradeLevel matches a class name within their assigned sections.
+ */
+router.get('/admin/list', authenticate, async (req, res) => {
   try {
     const { schoolId } = req;
     const user = req.user;

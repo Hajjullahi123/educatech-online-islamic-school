@@ -148,9 +148,6 @@ const SubAdminDashboard = ({ user, schoolSettings }) => {
   // Only show quick links the sub-admin has permission for
   const allowedLinks = ALL_QUICK_LINKS.filter(link => hasPermission(user, link.key));
   const permissionCount = allowedLinks.length;
-  const hasNoSectionRestriction = sections.length === 0 ||
-    (sections.length > 0 && !user?.sectionAccess?.length);
-
   const photoSrc = user?.photoUrl
     ? (user.photoUrl.startsWith('data:') || user.photoUrl.startsWith('http')
         ? user.photoUrl
