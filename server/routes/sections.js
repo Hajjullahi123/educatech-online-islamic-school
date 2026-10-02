@@ -68,8 +68,13 @@ router.get('/', authenticate, async (req, res) => {
     await ensureDefaultSections(schoolIdInt);
     await linkClassesToSections(schoolIdInt);
 
+    const where = { schoolId: schoolIdInt };
+    if (req.assignedSectionIds && req.assignedSectionIds.length > 0) {
+      where.id = { in: req.assignedSectionIds };
+    }
+
     const sections = await prisma.section.findMany({
-      where: { schoolId: schoolIdInt },
+      where,
       include: {
         classes: {
           select: { id: true, name: true, arm: true }
