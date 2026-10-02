@@ -644,6 +644,15 @@ const UserManagement = () => {
                                   )}
                                   {user.id !== currentUser?.id && (
                                     <>
+                                      <button
+                                        onClick={() => handleEdit(user)}
+                                        className="p-2 bg-blue-50 border border-blue-200/80 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-xl transition-all shadow-sm flex items-center justify-center min-w-[36px] min-h-[36px]"
+                                        title="Edit User & Permissions"
+                                      >
+                                        <svg className="w-5 h-5 shrink-0 stroke-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                      </button>
                                       {currentUser?.role !== 'sub_admin' && ['admin', 'sub_admin', 'principal', 'examination_officer', 'attendance_admin', 'superadmin'].includes(currentUser?.role) && user.role !== 'superadmin' && (
                                         <button
                                           onClick={() => handleImpersonate(user.id)}
