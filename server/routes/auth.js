@@ -586,34 +586,80 @@ router.post('/identify', validate(identifySchema), async (req, res) => {
 
 // Helper function to resolve user within a specific school
 async function findUserInSchool(schoolId, searchId, idVariants, phoneVariants, userSelect) {
+  // 1. Exact match on username or email
   let user = await prisma.user.findFirst({
     where: {
       schoolId,
       OR: [
         ...idVariants.map(id => ({ username: { equals: id, mode: 'insensitive' } })),
-        ...idVariants.filter(id => id.length >= 3).map(id => ({ username: { startsWith: id, mode: 'insensitive' } }))
+        ...idVariants.map(id => ({ email: { equals: id, mode: 'insensitive' } }))
       ]
     },
     select: userSelect
   });
 
+  // 2. Exact match on student admissionNumber or teacher staffId
   if (!user) {
-    user = await prisma.user.findFirst({
-      where: {
-        schoolId,
-        email: { equals: searchId, mode: 'insensitive' }
-      },
-      select: userSelect
-    });
+    const [studentRecord, teacherRecord] = await Promise.all([
+      prisma.student.findFirst({
+        where: {
+          schoolId,
+          OR: [
+            ...idVariants.map(id => ({ admissionNumber: { equals: id, mode: 'insensitive' } }))
+          ]
+        },
+        select: { id: true, userId: true, name: true, admissionNumber: true, user: { select: userSelect } }
+      }).catch(() => null),
+      prisma.teacher.findFirst({
+        where: {
+          schoolId,
+          OR: [
+            ...idVariants.map(id => ({ staffId: { equals: id, mode: 'insensitive' } }))
+          ]
+        },
+        select: { id: true, userId: true, staffId: true, user: { select: userSelect } }
+      }).catch(() => null)
+    ]);
+    user = studentRecord?.user || teacherRecord?.user;
   }
 
+  // 3. Exact match on rollNo
+  if (!user) {
+    try {
+      const rollRecord = await prisma.student.findFirst({
+        where: {
+          schoolId,
+          OR: [
+            ...idVariants.map(id => ({ rollNo: { equals: id, mode: 'insensitive' } }))
+          ]
+        },
+        select: { user: { select: userSelect } }
+      });
+      user = rollRecord?.user || null;
+    } catch (e) {}
+  }
+
+  // 4. Exact match on phone number
   if (!user && phoneVariants.length > 0) {
     user = await prisma.user.findFirst({
       where: {
         schoolId,
         OR: [
-          ...phoneVariants.map(p => ({ phone: { contains: p } })),
-          ...phoneVariants.map(p => ({ Parent: { phone: { contains: p } } }))
+          ...phoneVariants.map(p => ({ phone: { equals: p } })),
+          ...phoneVariants.map(p => ({ Parent: { phone: { equals: p } } }))
+        ]
+      },
+      select: userSelect
+    });
+  }
+
+  // 5. Fallback: Prefix / partial match ONLY if no exact match exists
+  if (!user) {
+    user = await prisma.user.findFirst({
+      where: {
+        schoolId,
+        OR: [
+          ...idVariants.filter(id => id.length >= 3).map(id => ({ username: { startsWith: id, mode: 'insensitive' } }))
         ]
       },
       select: userSelect
@@ -626,7 +672,6 @@ async function findUserInSchool(schoolId, searchId, idVariants, phoneVariants, u
         where: {
           schoolId,
           OR: [
-            ...idVariants.map(id => ({ admissionNumber: { equals: id, mode: 'insensitive' } })),
             ...idVariants.filter(id => id.length >= 3).map(id => ({ admissionNumber: { startsWith: id, mode: 'insensitive' } })),
             ...idVariants.filter(id => id.length >= 3).map(id => ({ admissionNumber: { endsWith: id, mode: 'insensitive' } })),
             ...idVariants.filter(id => id.length >= 4).map(id => ({ admissionNumber: { contains: id, mode: 'insensitive' } })),
@@ -635,18 +680,17 @@ async function findUserInSchool(schoolId, searchId, idVariants, phoneVariants, u
           ]
         },
         select: { id: true, userId: true, name: true, admissionNumber: true, user: { select: userSelect } }
-      }).catch(err => null),
+      }).catch(() => null),
       prisma.teacher.findFirst({
         where: {
           schoolId,
           OR: [
-            ...idVariants.map(id => ({ staffId: { equals: id, mode: 'insensitive' } })),
             ...idVariants.filter(id => id.length >= 3).map(id => ({ staffId: { startsWith: id, mode: 'insensitive' } })),
             ...idVariants.filter(id => id.length >= 4).map(id => ({ staffId: { contains: id, mode: 'insensitive' } }))
           ]
         },
         select: { id: true, userId: true, staffId: true, user: { select: userSelect } }
-      }).catch(err => null)
+      }).catch(() => null)
     ]);
 
     let rollNoRecord = null;
@@ -656,7 +700,6 @@ async function findUserInSchool(schoolId, searchId, idVariants, phoneVariants, u
           where: {
             schoolId,
             OR: [
-              ...idVariants.map(id => ({ rollNo: { equals: id, mode: 'insensitive' } })),
               ...idVariants.filter(id => id.length >= 3).map(id => ({ rollNo: { startsWith: id, mode: 'insensitive' } })),
               ...idVariants.filter(id => id.length >= 3).map(id => ({ rollNo: { endsWith: id, mode: 'insensitive' } }))
             ]
@@ -744,11 +787,13 @@ router.post('/login', validate(loginSchema), async (req, res) => {
           where: { slug: schoolSlug },
           select: { id: true } 
         });
-        if (!school) return res.status(404).json({ error: 'Invalid school domain' });
-
-        user = await findUserInSchool(school.id, searchId, idVariants, phoneVariants, userSelect);
-      } else {
-        // Global search when schoolSlug is not passed
+        if (school) {
+          user = await findUserInSchool(school.id, searchId, idVariants, phoneVariants, userSelect);
+        }
+      }
+      
+      // Fallback: Global search if no schoolSlug or if lookup within specified school returned no match
+      if (!user) {
         const userMatches = await prisma.user.findMany({
           where: {
             OR: [
