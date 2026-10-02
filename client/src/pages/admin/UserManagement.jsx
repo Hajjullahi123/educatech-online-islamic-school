@@ -429,7 +429,8 @@ const UserManagement = () => {
   };
 
   const filteredUsers = users.filter(user => {
-    const matchesRole = filter === 'all' || user.role === filter;
+    const ADMIN_STAFF_ROLES = ['admin', 'sub_admin', 'examination_officer', 'attendance_admin', 'principal', 'accountant'];
+    const matchesRole = filter === 'all' || (filter === 'staff' ? ADMIN_STAFF_ROLES.includes(user.role) : user.role === filter);
     const fullName = getDisplayName(user).toLowerCase();
     const matchesSearch =
       user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
