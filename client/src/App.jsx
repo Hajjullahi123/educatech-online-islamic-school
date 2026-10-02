@@ -478,6 +478,11 @@ function App() {
                   <QuranProgress />
                 </ProtectedRoute>
               } />
+              <Route path="quran-progress" element={
+                <ProtectedRoute roles={['student']}>
+                  <QuranProgress />
+                </ProtectedRoute>
+              } />
               <Route path="id-cards" element={
                 <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'examination_officer']}>
                   <IDCardGenerator />

@@ -108,6 +108,7 @@ const Layout = () => {
     '/dashboard/exam-tracker': 'examinations',
     '/dashboard/results-management': 'results_management',
     '/results-management': 'results_management',
+    '/dashboard/broadsheet': 'results_management',
     '/dashboard/compiled-broadsheet': 'results_management',
     '/dashboard/attendance': 'attendance',
     '/attendance': 'attendance',
@@ -121,6 +122,7 @@ const Layout = () => {
     '/dashboard/academic-workspace': 'lesson_plans',
     '/dashboard/lesson-workspace': 'lesson_plans',
     '/dashboard/curriculum': 'lesson_plans',
+    '/dashboard/curriculum-management': 'lesson_plans',
     '/dashboard/resources': 'resources',
     '/dashboard/academic-resources': 'resources',
     '/dashboard/cbt': 'cbt',
@@ -161,10 +163,13 @@ const Layout = () => {
     '/dashboard/password-reset': 'users',
     '/dashboard/alumni-management': 'users',
     '/dashboard/news-events': 'notices',
+    '/dashboard/news-events-management': 'notices',
+    '/dashboard/custom-pages': 'notices',
     '/dashboard/webpages': 'notices',
     '/dashboard/document-branding': 'settings',
     '/dashboard/departments': 'departments',
-    '/dashboard/exam-repository': 'examinations'
+    '/dashboard/exam-repository': 'examinations',
+    '/dashboard/quran-progress': 'students'
   };
 
   // Check if a sub_admin has permission for a given path
