@@ -50,6 +50,8 @@ const UserManagement = () => {
     : undefined;
   const schoolName = currentUser?.role === 'superadmin' ? "EduTechAI System" : (schoolSettings?.schoolName || currentUser?.schoolName || currentUser?.school?.name || "School Management");
   const [classes, setClasses] = useState([]);
+  const [sections, setSections] = useState([]);
+  const [selectedSections, setSelectedSections] = useState([]);
   const [expandedRoles, setExpandedRoles] = useState({});
   const [filter, setFilter] = useState('all'); // all, student, teacher, admin
   const [searchTerm, setSearchTerm] = useState('');
@@ -70,6 +72,7 @@ const UserManagement = () => {
   useEffect(() => {
     fetchUsers();
     fetchClasses();
+    fetchSections();
 
     // Read role from URL if present
     const params = new URLSearchParams(location.search);
@@ -89,6 +92,18 @@ const UserManagement = () => {
       }
     } catch (error) {
       console.error('Failed to fetch classes:', error);
+    }
+  };
+
+  const fetchSections = async () => {
+    try {
+      const response = await api.get('/api/sections');
+      if (response.ok) {
+        const data = await response.json();
+        setSections(Array.isArray(data) ? data : []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch sections:', error);
     }
   };
 
@@ -131,6 +146,7 @@ const UserManagement = () => {
     e.preventDefault();
     try {
       let response;
+      let savedUserId = editingUser?.id;
       if (editingUser) {
         const dataToSend = { ...formData };
         if (!dataToSend.password) delete dataToSend.password;
@@ -149,7 +165,16 @@ const UserManagement = () => {
 
       if (response.ok) {
         const result = await response.json();
+        if (!editingUser) savedUserId = result.id;
         const isAdminRole = ['admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin', 'teacher', 'higher_student'].includes(result.role);
+
+        // Save section access for sub_admin
+        if ((formData.role === 'sub_admin' || editingUser?.role === 'sub_admin') && savedUserId) {
+          await api.post('/api/sections/assign-admin', {
+            userId: savedUserId,
+            sectionIds: selectedSections
+          });
+        }
 
         if (result.generatedCredentials && (isAdminRole || !editingUser)) {
           setGeneratedCredentials({
@@ -173,7 +198,7 @@ const UserManagement = () => {
     }
   };
 
-  const handleEdit = (user) => {
+  const handleEdit = async (user) => {
     if (currentUser?.role === 'sub_admin' && ['admin', 'sub_admin', 'principal', 'superadmin'].includes(user.role)) {
       toast.error('Sub-admins are not authorized to edit Administrative or Sub Admin accounts');
       return;
@@ -209,6 +234,24 @@ const UserManagement = () => {
       parentPhone: user.student?.parentPhone || '',
       permissions: user.permissions || []
     });
+    // Load existing section assignments for sub_admin
+    if (user.role === 'sub_admin') {
+      try {
+        const res = await api.get('/api/sections/admin-assignments');
+        if (res.ok) {
+          const assignments = await res.json();
+          const userSectionIds = assignments
+            .filter(a => a.User?.id === user.id)
+            .map(a => a.Section?.id);
+          setSelectedSections(userSectionIds);
+        }
+      } catch (err) {
+        console.error('Failed to load section assignments:', err);
+        setSelectedSections([]);
+      }
+    } else {
+      setSelectedSections([]);
+    }
     setShowModal(true);
     if (user.photoUrl) {
       setPhotoPreview(user.photoUrl.startsWith('data:') || user.photoUrl.startsWith('http') ? user.photoUrl : `${API_BASE_URL}${user.photoUrl}`);
@@ -333,6 +376,7 @@ const UserManagement = () => {
     setEditingUser(null);
     setPhotoPreview(null);
     setPhotoFile(null);
+    setSelectedSections([]);
     setFormData({
       username: '',
       password: '',
@@ -766,9 +810,10 @@ const UserManagement = () => {
                 })()}
               </div>
 
-              {/* Sub-Admin Permission Presets & Checkboxes */}
+              {/* Sub-Admin Permission Presets & Checkboxes + Section Access */}
               {formData.role === 'sub_admin' && (
-                <div className="mt-2 mb-1">
+                <>
+                  <div className="mt-2 mb-1">
                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Module Permissions</label>
                   
                   {/* Preset Buttons */}
@@ -842,6 +887,43 @@ const UserManagement = () => {
                   </div>
                   <p className="text-[9px] text-gray-400 mt-1.5 ml-1">Selected: {formData.permissions?.length || 0} modules</p>
                 </div>
+
+                {/* Section Access */}
+                <div className="mt-3">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Section Access</label>
+                  {sections.length === 0 ? (
+                    <p className="text-[10px] text-gray-400 italic ml-1">No sections found. Create sections in Settings first.</p>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2 bg-gray-50 rounded-2xl p-3 border border-gray-100">
+                      {sections.map(section => (
+                        <label key={section.id} className="flex items-center gap-2 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            checked={selectedSections.includes(section.id)}
+                            onChange={(e) => {
+                              setSelectedSections(prev =>
+                                e.target.checked
+                                  ? [...prev, section.id]
+                                  : prev.filter(id => id !== section.id)
+                              );
+                            }}
+                            className="w-3.5 h-3.5 rounded accent-blue-600"
+                          />
+                          <span className="text-[10px] font-bold text-gray-700 group-hover:text-gray-900 transition-colors">
+                            {section.name}{section.code ? ` (${section.code})` : ''}
+                          </span>
+                          {section.classes?.length > 0 && (
+                            <span className="text-[9px] text-gray-400">{section.classes.length} class{section.classes.length !== 1 ? 'es' : ''}</span>
+                          )}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-[9px] text-gray-400 mt-1.5 ml-1">
+                    {selectedSections.length === 0 ? '⚠ No sections selected — sub-admin will have access to all sections' : `✅ ${selectedSections.length} section${selectedSections.length !== 1 ? 's' : ''} selected`}
+                  </p>
+                </div>
+                </>
               )}
 
               <div className="grid grid-cols-3 gap-3">
