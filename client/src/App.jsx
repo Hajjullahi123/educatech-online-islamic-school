@@ -261,8 +261,66 @@ function App() {
             }>
               <Route index element={<Dashboard />} />
               <Route path="students" element={<StudentList />} />
-              <Route path="results" element={<ResultManager />} />
-              <Route path="report-card" element={<ReportCard />} />
+              <Route path="results" element={
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'principal', 'examination_officer']}>
+                  <ResultManager />
+                </ProtectedRoute>
+              } />
+              <Route path="results-management" element={
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'examination_officer']}>
+                  <ResultManager />
+                </ProtectedRoute>
+              } />
+              <Route path="report-card" element={
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'parent', 'principal', 'examination_officer']}>
+                  <ReportCard />
+                </ProtectedRoute>
+              } />
+              <Route path="report-cards" element={
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'parent', 'principal', 'examination_officer']}>
+                  <ReportCard />
+                </ProtectedRoute>
+              } />
+              <Route path="examinations" element={
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'examination_officer']}>
+                  <ExamConfig />
+                </ProtectedRoute>
+              } />
+              <Route path="cbt" element={
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'principal', 'examination_officer']}>
+                  <CBTManagement />
+                </ProtectedRoute>
+              } />
+              <Route path="notices" element={
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin']}>
+                  <NoticeBoard />
+                </ProtectedRoute>
+              } />
+              <Route path="lesson-notes" element={
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'principal']}>
+                  <LessonWorkspace />
+                </ProtectedRoute>
+              } />
+              <Route path="gallery" element={
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'examination_officer']}>
+                  <GalleryManagement />
+                </ProtectedRoute>
+              } />
+              <Route path="performance-trends" element={
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'principal', 'examination_officer']}>
+                  <Analytics />
+                </ProtectedRoute>
+              } />
+              <Route path="school-calendar" element={
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal', 'examination_officer']}>
+                  <HolidayManager />
+                </ProtectedRoute>
+              } />
+              <Route path="academic-resources" element={
+                <ProtectedRoute roles={['admin', 'sub_admin', 'teacher', 'student', 'principal']}>
+                  <LearningResources />
+                </ProtectedRoute>
+              } />
               <Route path="parent-view" element={
                 <ProtectedRoute roles={['admin', 'sub_admin', 'parent', 'principal']}>
                   <ParentDashboard />
@@ -663,7 +721,7 @@ function App() {
                 </ProtectedRoute>
               } />
               <Route path="settings" element={
-                <ProtectedRoute roles={['admin']}>
+                <ProtectedRoute roles={['admin', 'sub_admin', 'principal']}>
                   <Settings />
                 </ProtectedRoute>
               } />
