@@ -36,7 +36,8 @@ const UserManagement = () => {
     disability: 'None',
     isScholarship: false,
     feeDiscount: 0,
-    parentGuardianName: ''
+    parentGuardianName: '',
+    permissions: []
   });
 
   const { user: currentUser, impersonateUser } = useAuth();
@@ -205,7 +206,8 @@ const UserManagement = () => {
       parentGuardianName: user.student?.parentGuardianName || '',
       classId: user.student?.classId || '',
       parentEmail: user.student?.parentEmail || '',
-      parentPhone: user.student?.parentPhone || ''
+      parentPhone: user.student?.parentPhone || '',
+      permissions: user.permissions || []
     });
     setShowModal(true);
     if (user.photoUrl) {
@@ -353,7 +355,8 @@ const UserManagement = () => {
       disability: 'None',
       isScholarship: false,
       feeDiscount: 0,
-      parentGuardianName: ''
+      parentGuardianName: '',
+      permissions: []
     });
   };
 
@@ -753,6 +756,85 @@ const UserManagement = () => {
                   ) : null;
                 })()}
               </div>
+
+              {/* Sub-Admin Permission Presets & Checkboxes */}
+              {formData.role === 'sub_admin' && (
+                <div className="mt-2 mb-1">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Module Permissions</label>
+                  
+                  {/* Preset Buttons */}
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, permissions: ['students','users','classes','subjects','teacher_assignment','results','report_cards','examinations','results_management','attendance','fees','lesson_plans','resources','cbt','homework','certificates','testimonials','gallery','timetable','hr','notices','promotions','analytics','id_cards','settings','calendar','admissions','departments'] }))}
+                      className="text-[10px] font-black px-3 py-1.5 rounded-xl bg-green-100 text-green-700 hover:bg-green-200 transition-all"
+                    >✅ Full Access</button>
+                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, permissions: ['students','classes','subjects','results','report_cards','attendance','lesson_plans','homework'] }))}
+                      className="text-[10px] font-black px-3 py-1.5 rounded-xl bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all"
+                    >📚 Academics Only</button>
+                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, permissions: ['fees','hr'] }))}
+                      className="text-[10px] font-black px-3 py-1.5 rounded-xl bg-purple-100 text-purple-700 hover:bg-purple-200 transition-all"
+                    >💰 Finance & HR</button>
+                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, permissions: ['students','users','attendance','notices'] }))}
+                      className="text-[10px] font-black px-3 py-1.5 rounded-xl bg-amber-100 text-amber-700 hover:bg-amber-200 transition-all"
+                    >👥 Student Affairs</button>
+                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, permissions: [] }))}
+                      className="text-[10px] font-black px-3 py-1.5 rounded-xl bg-red-100 text-red-700 hover:bg-red-200 transition-all"
+                    >🚫 Clear All</button>
+                  </div>
+
+                  {/* Checkbox Grid */}
+                  <div className="grid grid-cols-3 gap-x-3 gap-y-1.5 bg-gray-50 rounded-2xl p-3 border border-gray-100 max-h-[200px] overflow-y-auto">
+                    {[
+                      { key: 'students', label: '👨🎓 Students' },
+                      { key: 'users', label: '👥 Users' },
+                      { key: 'classes', label: '🏫 Classes' },
+                      { key: 'subjects', label: '📚 Subjects' },
+                      { key: 'teacher_assignment', label: '📋 Teacher Assign' },
+                      { key: 'results', label: '📝 Results Entry' },
+                      { key: 'report_cards', label: '📄 Report Cards' },
+                      { key: 'examinations', label: '🎯 Examinations' },
+                      { key: 'results_management', label: '📊 Results Mgmt' },
+                      { key: 'attendance', label: '📅 Attendance' },
+                      { key: 'fees', label: '💰 School Fees' },
+                      { key: 'lesson_plans', label: '📖 Lesson Plans' },
+                      { key: 'resources', label: '📂 Resources' },
+                      { key: 'cbt', label: '💻 CBT Exams' },
+                      { key: 'homework', label: '📝 Homework' },
+                      { key: 'certificates', label: '🏆 Certificates' },
+                      { key: 'testimonials', label: '📜 Testimonials' },
+                      { key: 'gallery', label: '🖼️ Gallery' },
+                      { key: 'timetable', label: '🕐 Timetable' },
+                      { key: 'hr', label: '🧑💼 HR Management' },
+                      { key: 'notices', label: '📢 Notices' },
+                      { key: 'promotions', label: '🎓 Promotions' },
+                      { key: 'analytics', label: '📈 Analytics' },
+                      { key: 'id_cards', label: '🪪 ID Cards' },
+                      { key: 'settings', label: '⚙️ Settings' },
+                      { key: 'calendar', label: '📅 Calendar' },
+                      { key: 'admissions', label: '🎒 Admissions' },
+                      { key: 'departments', label: '🏛️ Departments' }
+                    ].map(({ key, label }) => (
+                      <label key={key} className="flex items-center gap-1.5 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={formData.permissions?.includes(key)}
+                          onChange={(e) => {
+                            setFormData(prev => ({
+                              ...prev,
+                              permissions: e.target.checked
+                                ? [...(prev.permissions || []), key]
+                                : (prev.permissions || []).filter(p => p !== key)
+                            }));
+                          }}
+                          className="w-3.5 h-3.5 rounded accent-blue-600"
+                        />
+                        <span className="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 transition-colors">{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="text-[9px] text-gray-400 mt-1.5 ml-1">Selected: {formData.permissions?.length || 0} modules</p>
+                </div>
+              )}
+
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">First Name</label>

@@ -77,6 +77,7 @@ const getFullUserPayload = async (userId, schoolId, role) => {
       id: true, username: true, role: true, schoolId: true,
       firstName: true, lastName: true, email: true,
       signatureUrl: true, mustChangePassword: true, photoUrl: true,
+      permissions: true,
       departmentAsHead: { select: { id: true, name: true } },
       ...include
     }
@@ -203,7 +204,8 @@ const getFullUserPayload = async (userId, schoolId, role) => {
     formMasterClass: formMasterClass || (unassignedClasses && unassignedClasses.length > 0 ? unassignedClasses[0] : null),
     unassignedClasses: unassignedClasses || [],
     hasQuranAccess: hasQuranAccess,
-    departmentAsHead: user.departmentAsHead
+    departmentAsHead: user.departmentAsHead,
+    permissions: user.permissions || []
   };
 };// Helper to construct normalized identifier variations (slash vs dash, spaces, leading zeros, 2-digit/4-digit years, and sub-segments)
 const getIdentifierVariants = (rawIdentifier) => {

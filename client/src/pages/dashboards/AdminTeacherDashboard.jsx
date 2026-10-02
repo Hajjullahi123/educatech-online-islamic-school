@@ -199,6 +199,13 @@ const AdminTeacherDashboard = ({ user, schoolSettings }) => {
     }
   };
 
+  // Sub-admin permission check helper
+  const hasPermission = (permKey) => {
+    if (user?.role !== 'sub_admin') return true;
+    if (!user.permissions || user.permissions.length === 0) return true; // empty = full access (backward compat)
+    return user.permissions.includes(permKey);
+  };
+
   if (loading) return <div className="p-8 text-center text-xs font-black uppercase tracking-widest text-gray-400 animate-pulse">Initializing Command Center...</div>;
 
   return (
@@ -377,7 +384,7 @@ const AdminTeacherDashboard = ({ user, schoolSettings }) => {
           </div>
         </Link>
 
-        {(user?.role === 'admin' || user?.role === 'principal') && (
+        {(user?.role === 'admin' || user?.role === 'principal' || (user?.role === 'sub_admin' && hasPermission('subjects'))) && (
           <div className="bg-teal-50 p-5 rounded-2xl shadow-sm border border-teal-100 transition-all hover:scale-[1.02]">
             <p className="text-[10px] font-black text-teal-600 uppercase tracking-widest mb-1">Reg. Subjects</p>
             <p className="text-2xl font-black text-teal-900">{totalSubjectsCount || 0}</p>
@@ -386,7 +393,7 @@ const AdminTeacherDashboard = ({ user, schoolSettings }) => {
       </div>
 
       {/* Visual Analytics Section */}
-      {(user?.role === 'admin' || user?.role === 'principal') && (
+      {(user?.role === 'admin' || user?.role === 'principal' || (user?.role === 'sub_admin' && hasPermission('analytics'))) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Revenue Chart */}
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
@@ -649,20 +656,28 @@ const AdminTeacherDashboard = ({ user, schoolSettings }) => {
       )}
 
       {/* Admin Quick Links */}
-      {(user?.role === 'admin' || user?.role === 'principal') && (
+      {(user?.role === 'admin' || user?.role === 'principal' || user?.role === 'sub_admin') && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Link to="/dashboard/users" className="bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-xl text-center shadow transition-all">
-             <span className="text-[11px] font-black uppercase tracking-widest">Users</span>
-          </Link>
-          <Link to="/dashboard/result-entry" className="bg-emerald-600 hover:bg-emerald-700 text-white p-4 rounded-xl text-center shadow transition-all">
-             <span className="text-[11px] font-black uppercase tracking-widest">Assessment & Results</span>
-          </Link>
-          <Link to="/dashboard/hr-admin" className="bg-rose-600 hover:bg-rose-700 text-white p-4 rounded-xl text-center shadow transition-all">
-             <span className="text-[11px] font-black uppercase tracking-widest">HR Command</span>
-          </Link>
-          <Link to="/dashboard/settings" className="bg-slate-700 hover:bg-slate-800 text-white p-4 rounded-xl text-center shadow transition-all">
-             <span className="text-[11px] font-black uppercase tracking-widest">System</span>
-          </Link>
+          {hasPermission('users') && (
+            <Link to="/dashboard/users" className="bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-xl text-center shadow transition-all">
+               <span className="text-[11px] font-black uppercase tracking-widest">Users</span>
+            </Link>
+          )}
+          {hasPermission('results') && (
+            <Link to="/dashboard/result-entry" className="bg-emerald-600 hover:bg-emerald-700 text-white p-4 rounded-xl text-center shadow transition-all">
+               <span className="text-[11px] font-black uppercase tracking-widest">Assessment & Results</span>
+            </Link>
+          )}
+          {hasPermission('hr') && (
+            <Link to="/dashboard/hr-admin" className="bg-rose-600 hover:bg-rose-700 text-white p-4 rounded-xl text-center shadow transition-all">
+               <span className="text-[11px] font-black uppercase tracking-widest">HR Command</span>
+            </Link>
+          )}
+          {hasPermission('settings') && (
+            <Link to="/dashboard/settings" className="bg-slate-700 hover:bg-slate-800 text-white p-4 rounded-xl text-center shadow transition-all">
+               <span className="text-[11px] font-black uppercase tracking-widest">System</span>
+            </Link>
+          )}
         </div>
       )}
     </div>

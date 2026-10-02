@@ -81,7 +81,85 @@ const Layout = () => {
     }
   };
 
-  const menuItems = [];
+  // Permission key mapping for sub_admin sidebar filtering
+  const PERMISSION_PATH_MAP = {
+    '/dashboard/student-management': 'students',
+    '/students': 'students',
+    '/dashboard/users': 'users',
+    '/users': 'users',
+    '/dashboard/class-management': 'classes',
+    '/classes': 'classes',
+    '/dashboard/subject-management': 'subjects',
+    '/subjects': 'subjects',
+    '/dashboard/teacher-assignments': 'teacher_assignment',
+    '/teacher-assignment': 'teacher_assignment',
+    '/dashboard/results': 'results',
+    '/results': 'results',
+    '/dashboard/report-cards': 'report_cards',
+    '/report-cards': 'report_cards',
+    '/dashboard/examinations': 'examinations',
+    '/examinations': 'examinations',
+    '/dashboard/exam-config': 'examinations',
+    '/dashboard/exam-tracker': 'examinations',
+    '/dashboard/results-management': 'results_management',
+    '/results-management': 'results_management',
+    '/dashboard/compiled-broadsheet': 'results_management',
+    '/dashboard/attendance': 'attendance',
+    '/attendance': 'attendance',
+    '/dashboard/attendance-tracker': 'attendance',
+    '/dashboard/attendance-rules': 'attendance',
+    '/dashboard/gate-scan': 'attendance',
+    '/dashboard/staff-attendance': 'attendance',
+    '/dashboard/fees': 'fees',
+    '/fees': 'fees',
+    '/dashboard/lesson-notes': 'lesson_plans',
+    '/dashboard/lesson-workspace': 'lesson_plans',
+    '/dashboard/curriculum': 'lesson_plans',
+    '/dashboard/academic-resources': 'resources',
+    '/dashboard/cbt': 'cbt',
+    '/dashboard/question-bank': 'cbt',
+    '/dashboard/homework': 'homework',
+    '/dashboard/certificates': 'certificates',
+    '/dashboard/testimonials': 'testimonials',
+    '/dashboard/gallery': 'gallery',
+    '/dashboard/timetable': 'timetable',
+    '/dashboard/period-setup': 'timetable',
+    '/dashboard/teacher-availability': 'timetable',
+    '/dashboard/hr-center': 'hr',
+    '/dashboard/hr': 'hr',
+    '/dashboard/payroll': 'hr',
+    '/dashboard/notices': 'notices',
+    '/dashboard/promotions': 'promotions',
+    '/dashboard/promotion-history': 'promotions',
+    '/dashboard/performance-trends': 'analytics',
+    '/dashboard/class-analytics': 'analytics',
+    '/dashboard/id-cards': 'id_cards',
+    '/dashboard/settings': 'settings',
+    '/dashboard/school-calendar': 'calendar',
+    '/school-calendar': 'calendar',
+    '/dashboard/admissions': 'admissions',
+    '/dashboard/manage-parents': 'students',
+    '/dashboard/credential-repository': 'users',
+    '/dashboard/directory-export': 'users',
+    '/dashboard/password-reset': 'users',
+    '/dashboard/alumni-management': 'users',
+    '/dashboard/news-events': 'notices',
+    '/dashboard/webpages': 'notices',
+    '/dashboard/document-branding': 'settings',
+    '/dashboard/departments': 'departments',
+    '/dashboard/exam-repository': 'examinations'
+  };
+
+  // Check if a sub_admin has permission for a given path
+  const hasSubAdminPermission = (path) => {
+    if (user?.role !== 'sub_admin') return true;
+    if (!user.permissions || user.permissions.length === 0) return true; // empty = full access (backward compat)
+    const permKey = PERMISSION_PATH_MAP[path];
+    if (!permKey) return true; // paths not in the map are always accessible (dashboard, profile, notifications, messages, etc.)
+    return user.permissions.includes(permKey);
+  };
+
+  let menuItems = [];
   const isFormMaster = (['teacher', 'principal'].includes(user?.role) && user?.classesAsTeacher && user.classesAsTeacher.length > 0) || isFormMasterDynamic || user?.isFormMaster || (user?.role === 'examination_officer' && user?.unassignedClasses?.length > 0);
 
 
@@ -1573,6 +1651,20 @@ const Layout = () => {
         </svg>
       ),
       label: 'Qur\'an Tracker'
+    });
+  }
+
+  // Filter items for sub_admin based on permissions
+  if (user?.role === 'sub_admin' && user.permissions && user.permissions.length > 0) {
+    menuItems = menuItems.filter(item => {
+      if (item.type === 'group') {
+        // Filter sub-items within groups
+        const filteredSubItems = item.items.filter(sub => hasSubAdminPermission(sub.path));
+        if (filteredSubItems.length === 0) return false;
+        item.items = filteredSubItems;
+        return true;
+      }
+      return hasSubAdminPermission(item.path);
     });
   }
 

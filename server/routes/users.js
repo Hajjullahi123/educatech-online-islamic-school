@@ -100,7 +100,8 @@ router.post('/', authenticate, authorize(['admin', 'sub_admin', 'principal', 'ac
       specialization,
       // General
       phone,
-      photoUrl
+      photoUrl,
+      permissions
     } = req.body;
 
     let finalUsername;
@@ -249,7 +250,8 @@ router.post('/', authenticate, authorize(['admin', 'sub_admin', 'principal', 'ac
       firstName,
       middleName: middleName || null,
       lastName,
-      photoUrl: photoUrl || null
+      photoUrl: photoUrl || null,
+      permissions: (role === 'sub_admin' && Array.isArray(permissions)) ? permissions : []
     };
 
     let user;
@@ -534,6 +536,14 @@ router.put('/:id', authenticate, authorize(['admin', 'sub_admin', 'principal', '
       username,
       photoUrl
     };
+
+    // Handle permissions for sub_admin role
+    if (Array.isArray(req.body.permissions)) {
+      const targetRole = role || user.role;
+      if (targetRole === 'sub_admin') {
+        updateData.permissions = req.body.permissions;
+      }
+    }
 
     if (role) {
       if (!['admin', 'sub_admin', 'teacher', 'student', 'accountant', 'principal', 'examination_officer', 'attendance_admin', 'higher_student'].includes(role)) {

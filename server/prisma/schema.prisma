@@ -316,7 +316,7 @@ model User {
   processedHRMessages HRMessage[]         @relation("MessageProcessor")
   departmentResources DepartmentResource[] @relation("ResourceUploader")
   sectionAccess       SectionAdminAccess[]
-
+  permissions          String[]             @default([])
   @@unique([schoolId, username])
   @@unique([schoolId, email])
   @@index([email])
