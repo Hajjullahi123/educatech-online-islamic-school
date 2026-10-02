@@ -418,26 +418,42 @@ router.post('/link-student', authenticate, authorize(['admin', 'principal', 'acc
 // 4. Get Parent Details (Admin/Principal/Sub-Admin)
 router.get('/', authenticate, authorize(['admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin', 'sub_admin']), async (req, res) => {
   try {
+    const where = { schoolId: req.schoolId };
+
+    if (req.user.role === 'sub_admin' && req.allowedClassIds && req.allowedClassIds.length > 0) {
+      where.parentChildren = {
+        some: {
+          classId: { in: req.allowedClassIds }
+        }
+      };
+    }
+
     const enhancedParents = await prisma.parent.findMany({
-      where: { schoolId: req.schoolId },
+      where,
       include: {
         user: { select: { firstName: true, lastName: true, email: true, username: true } },
         parentChildren: {
           where: { schoolId: req.schoolId },
           include: {
             user: { select: { firstName: true, lastName: true, photoUrl: true } },
-            classModel: { select: { name: true, arm: true } }
+            classModel: { select: { name: true, arm: true, sectionId: true } }
           }
         }
       }
     });
 
-    const mappedParents = enhancedParents.map(p => ({
-      ...p,
-      user: p.user,
-      students: p.parentChildren || [],
-      parentChildren: undefined
-    }));
+    const mappedParents = enhancedParents.map(p => {
+      let wards = p.parentChildren || [];
+      if (req.user.role === 'sub_admin' && req.allowedClassIds && req.allowedClassIds.length > 0) {
+        wards = wards.filter(child => child.classId && req.allowedClassIds.includes(child.classId));
+      }
+      return {
+        ...p,
+        user: p.user,
+        students: wards,
+        parentChildren: undefined
+      };
+    });
     res.json(mappedParents);
   } catch (e) {
     console.error('Fetch parents error:', e);

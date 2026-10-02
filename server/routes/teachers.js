@@ -29,11 +29,22 @@ function fileToBase64(file) {
   return `data:${file.mimetype};base64,${base64}`;
 }
 
-// Get all teachers (Admin Only)
-router.get('/', authenticate, authorize(['admin']), async (req, res) => {
+// Get all teachers (Admin/Principal/Sub-Admin)
+router.get('/', authenticate, authorize(['admin', 'sub_admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin']), async (req, res) => {
   try {
+    const where = { schoolId: req.schoolId };
+
+    if (req.user.role === 'sub_admin' && req.allowedClassIds && req.allowedClassIds.length > 0) {
+      where.user = {
+        OR: [
+          { classesAsTeacher: { some: { id: { in: req.allowedClassIds } } } },
+          { teacherAssignments: { some: { classSubject: { classId: { in: req.allowedClassIds } } } } }
+        ]
+      };
+    }
+
     const teachers = await prisma.teacher.findMany({
-      where: { schoolId: req.schoolId },
+      where,
       include: { user: true }
     });
     res.json(teachers);

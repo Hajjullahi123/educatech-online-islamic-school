@@ -6,7 +6,7 @@ const { authenticate, authorize } = require('../middleware/auth');
 const { logAction } = require('../utils/audit');
 const { generateTeacherUsername, generateStudentUsername } = require('../utils/usernameGenerator');
 
-// Get all users (Admin/Principal only)
+// Get all users (Admin/Principal/Sub-Admin)
 router.get('/', authenticate, authorize(['admin', 'sub_admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin']), async (req, res) => {
   try {
     const { role, search } = req.query;
@@ -16,11 +16,41 @@ router.get('/', authenticate, authorize(['admin', 'sub_admin', 'principal', 'acc
     if (search) {
       where.OR = [
         { username: { contains: search } },
-        {firstName: {contains: search}},
-        {middleName: {contains: search}},
-        {lastName: {contains: search}},
-        {email: {contains: search}}
+        { firstName: { contains: search } },
+        { middleName: { contains: search } },
+        { lastName: { contains: search } },
+        { email: { contains: search } }
       ];
+    }
+
+    // SUB-ADMIN SECTION SCOPING
+    if (req.user.role === 'sub_admin' && req.allowedClassIds && req.allowedClassIds.length > 0) {
+      if (role === 'student') {
+        where.student = { classId: { in: req.allowedClassIds } };
+      } else if (role === 'parent') {
+        where.Parent = {
+          parentChildren: {
+            some: { classId: { in: req.allowedClassIds } }
+          }
+        };
+      } else if (role === 'teacher') {
+        where.OR = [
+          { classesAsTeacher: { some: { id: { in: req.allowedClassIds } } } },
+          { teacherAssignments: { some: { classSubject: { classId: { in: req.allowedClassIds } } } } }
+        ];
+      } else if (!role) {
+        where.AND = [
+          {
+            OR: [
+              { id: req.user.id },
+              { student: { classId: { in: req.allowedClassIds } } },
+              { Parent: { parentChildren: { some: { classId: { in: req.allowedClassIds } } } } },
+              { classesAsTeacher: { some: { id: { in: req.allowedClassIds } } } },
+              { teacherAssignments: { some: { classSubject: { classId: { in: req.allowedClassIds } } } } }
+            ]
+          }
+        ];
+      }
     }
 
     const users = await prisma.user.findMany({
@@ -46,7 +76,8 @@ router.get('/', authenticate, authorize(['admin', 'sub_admin', 'principal', 'acc
           include: {
             parentChildren: {
               include: {
-                user: { select: { firstName: true, lastName: true } }
+                user: { select: { firstName: true, lastName: true } },
+                classModel: { select: { name: true, arm: true, sectionId: true } }
               }
             }
           }
@@ -56,13 +87,16 @@ router.get('/', authenticate, authorize(['admin', 'sub_admin', 'principal', 'acc
     });
 
     const mappedUsers = users.map(u => {
-      // Robust mapping for parents to ensure consistent property names (parent vs Parent)
       if (u.Parent || u.role === 'parent') {
+        let wards = u.Parent?.parentChildren || [];
+        if (req.user.role === 'sub_admin' && req.allowedClassIds && req.allowedClassIds.length > 0) {
+          wards = wards.filter(child => child.classId && req.allowedClassIds.includes(child.classId));
+        }
         return {
           ...u,
           parent: u.Parent ? {
             ...u.Parent,
-            students: u.Parent.parentChildren || [],
+            students: wards,
             parentChildren: undefined
           } : null,
           Parent: undefined
