@@ -1046,12 +1046,37 @@ router.post('/admin/create-candidate', authenticate, async (req, res) => {
 
 /**
  * @route   GET /api/admissions/admin/list
- * @desc    Retrieve all admissions applications for the current school
+ * @desc    Retrieve admissions applications for the current school.
+ *          Sub-admins with section restrictions only see applications
+ *          whose gradeLevel matches a class name within their assigned sections.
  */
 router.get('/admin/list', authenticate, async (req, res) => {
   try {
+    const { schoolId } = req;
+    const user = req.user;
+    let whereClause = { schoolId };
+
+    // Apply section-based filtering for sub_admins with restricted section access
+    if (user?.role === 'sub_admin') {
+      const sectionAccess = await prisma.sectionAdminAccess.findMany({
+        where: { userId: user.id },
+        include: { Section: { include: { classes: { select: { name: true } } } } }
+      });
+
+      // If the sub_admin has specific section assignments, filter by class names in those sections
+      if (sectionAccess.length > 0) {
+        const allowedClassNames = sectionAccess.flatMap(sa =>
+          sa.Section.classes.map(cls => cls.name)
+        );
+        // Filter applications where gradeLevel matches one of the allowed class names
+        if (allowedClassNames.length > 0) {
+          whereClause.gradeLevel = { in: allowedClassNames };
+        }
+      }
+    }
+
     const list = await prisma.admissionApplication.findMany({
-      where: { schoolId: req.schoolId },
+      where: whereClause,
       orderBy: { createdAt: 'desc' }
     });
     res.json(list);
@@ -1060,6 +1085,7 @@ router.get('/admin/list', authenticate, async (req, res) => {
     res.status(500).json({ error: 'Failed to retrieve applications' });
   }
 });
+
 
 /**
  * @route   PUT /api/admissions/admin/:id/interview
