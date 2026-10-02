@@ -327,7 +327,7 @@ app.post('/api/log-client-error', (req, res) => {
   res.status(200).send('Logged');
 });
 
-const { authenticate, authorize, optionalAuth } = require('./middleware/auth');
+const { authenticate, authorize, optionalAuth, attachSectionScope } = require('./middleware/auth');
 
 // Modular Seeder
 try {
@@ -427,16 +427,16 @@ app.get('/api/public/global-settings', async (req, res) => {
 // Use Routes
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/users', authenticate, checkSubscription, userRoutes);
-app.use('/api/students', authenticate, checkSubscription, studentRoutes);
+app.use('/api/students', authenticate, attachSectionScope, checkSubscription, studentRoutes);
 app.use('/api/subjects', authenticate, checkSubscription, subjectRoutes);
 app.use('/api/exams', authenticate, checkSubscription, examRoutes);
-app.use('/api/results', authenticate, checkSubscription, resultsRoutes);
+app.use('/api/results', authenticate, attachSectionScope, checkSubscription, resultsRoutes);
 app.use('/api/reports', authenticate, checkSubscription, reportRoutes);
 app.use('/api/analytics', authenticate, checkSubscription, analyticsRoutes);
 app.use('/api/advanced-analytics', authenticate, checkSubscription, advancedAnalyticsRoutes);
 app.use('/api/academic-sessions', authenticate, checkSubscription, academicSessionRoutes);
 app.use('/api/terms', authenticate, checkSubscription, termRoutes);
-app.use('/api/classes', authenticate, checkSubscription, classRoutes);
+app.use('/api/classes', authenticate, attachSectionScope, checkSubscription, classRoutes);
 app.use('/api/sections', authenticate, checkSubscription, sectionRoutes);
 app.use('/api/class-subjects', authenticate, checkSubscription, classSubjectRoutes);
 app.use('/api/assignments', authenticate, checkSubscription, assignmentRoutes);
@@ -447,17 +447,17 @@ app.use('/api/teacher-assignments', authenticate, checkSubscription, teacherAssi
 app.use('/api/bulk-upload', authenticate, checkSubscription, bulkUploadRoutes);
 app.use('/api/school-setup', authenticate, checkSubscription, schoolSetupRoutes);
 app.use('/api/scoresheet', authenticate, checkSubscription, scoresheetRoutes);
-app.use('/api/fees', authenticate, checkSubscription, feeRoutes);
-app.use('/api/fee-management', authenticate, checkSubscription, feeRoutes);
+app.use('/api/fees', authenticate, attachSectionScope, checkSubscription, feeRoutes);
+app.use('/api/fee-management', authenticate, attachSectionScope, checkSubscription, feeRoutes);
 app.use('/api/fee-structure', authenticate, checkSubscription, feeStructureRoutes);
 app.use('/api/exam-cards', authenticate, checkSubscription, examCardRoutes);
 app.use('/api/teachers', authenticate, checkSubscription, teacherProfileRoutes);
 app.use('/api/top-students', topStudentsRoutes);
 app.use('/api/license', authenticate, licenseRoutes);
 app.use('/api/settings', settingsRoutes);
-app.use('/api/admissions', admissionsRoutes);
+app.use('/api/admissions', authenticate, attachSectionScope, checkSubscription, admissionsRoutes);
 app.use('/api/payments', authenticate, checkSubscription, paymentRoutes);
-app.use('/api/attendance', authenticate, checkSubscription, attendanceRoutes);
+app.use('/api/attendance', authenticate, attachSectionScope, checkSubscription, attendanceRoutes);
 app.use('/api/staff-attendance', authenticate, checkSubscription, staffAttendanceRoutes);
 app.use('/api/messages', authenticate, checkSubscription, messageRoutes);
 app.use('/api/timetable', authenticate, checkSubscription, timetableRoutes);

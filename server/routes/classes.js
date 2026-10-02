@@ -33,6 +33,11 @@ router.get('/', authenticate, async (req, res) => {
       ];
     }
 
+    // Section scope: restrict to classes within the sub-admin's assigned sections
+    if (req.assignedSectionIds && req.assignedSectionIds.length > 0) {
+      where.sectionId = { in: req.assignedSectionIds };
+    }
+
     const classes = await prisma.class.findMany({
       where,
       include: {
@@ -63,6 +68,7 @@ router.get('/', authenticate, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch classes' });
   }
 });
+
 
 // Get class assigned to the logged-in teacher (or unassigned class for exam officer)
 router.get('/my-class', authenticate, async (req, res) => {

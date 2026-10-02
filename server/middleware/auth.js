@@ -89,23 +89,39 @@ const optionalAuth = (req, res, next) => {
 };
 
 // Section scope middleware for sub-admins
+// Populates req.assignedSectionIds (section IDs) and req.allowedClassIds (class IDs in those sections)
+// Only applies to sub_admin users who have section restrictions.
+// If no sections are assigned, req.allowedClassIds remains undefined (= full access).
 const attachSectionScope = async (req, res, next) => {
   try {
-    if (req.user && req.user.id && ['sub_admin', 'admin'].includes(req.user.role)) {
+    if (req.user && req.user.id && req.user.role === 'sub_admin') {
       const prisma = require('../db');
       const sectionAssignments = await prisma.sectionAdminAccess.findMany({
         where: { userId: req.user.id },
         select: { sectionId: true }
       });
+
       if (sectionAssignments && sectionAssignments.length > 0) {
         req.assignedSectionIds = sectionAssignments.map(a => a.sectionId);
+
+        // Pre-fetch all class IDs within the assigned sections
+        const classes = await prisma.class.findMany({
+          where: {
+            sectionId: { in: req.assignedSectionIds },
+            schoolId: req.schoolId
+          },
+          select: { id: true, name: true }
+        });
+        req.allowedClassIds  = classes.map(c => c.id);
+        req.allowedClassNames = classes.map(c => c.name);
       }
     }
   } catch (err) {
-    console.error('Error attaching section scope:', err);
+    console.error('[SectionScope] Error attaching section scope:', err);
   }
   next();
 };
+
 
 module.exports = {
   authenticate,

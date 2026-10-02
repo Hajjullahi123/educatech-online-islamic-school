@@ -14,6 +14,11 @@ router.get('/', authenticate, async (req, res) => {
     if (studentId) where.studentId = parseInt(studentId);
     if (examId) where.examId = parseInt(examId);
 
+    // Section scope: restrict to results for students in allowed classes
+    if (req.allowedClassIds && req.allowedClassIds.length > 0) {
+      where.student = { classId: { in: req.allowedClassIds } };
+    }
+
     const results = await prisma.result.findMany({
       where,
       include: {
@@ -33,6 +38,7 @@ router.get('/', authenticate, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
 
 // Add/Update result (Admin/Principal/Teacher/ExamOfficer)
 router.post('/', authenticate, authorize(['admin', 'teacher', 'principal', 'examination_officer']), async (req, res) => {

@@ -101,6 +101,20 @@ router.get('/', authenticate, async (req, res) => {
 
     if (academicSessionId) where.academicSessionId = parseInt(academicSessionId);
 
+    // Section scope: verify the requested student is in an allowed class
+    if (req.allowedClassIds && req.allowedClassIds.length > 0) {
+      const student = await prisma.student.findFirst({
+        where: { id: parseInt(studentId), schoolId: req.schoolId },
+        select: { classId: true }
+      });
+      if (student && !req.allowedClassIds.includes(student.classId)) {
+        return res.status(403).json({
+          error: 'Access Denied',
+          message: 'This student is outside your assigned section scope.'
+        });
+      }
+    }
+
     const results = await prisma.result.findMany({
       where,
       include: {

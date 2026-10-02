@@ -7,7 +7,7 @@ const { logAction } = require('../utils/audit');
 const { getStudentFeeSummary, calculatePreviousOutstanding, createOrUpdateFeeRecordWithOpening, recalculateStudentFeeChain } = require('../utils/feeCalculations');
 
 // Get all students with fee status (Accountant/Admin)
-router.get('/students', authenticate, authorize(['admin', 'principal', 'accountant']), async (req, res) => {
+router.get('/students', authenticate, authorize(['admin', 'principal', 'accountant', 'sub_admin']), async (req, res) => {
   try {
     const { academicSessionId, termId, classId, ignoreJoinDate } = req.query;
     const schoolIdInt = parseInt(req.schoolId);
@@ -48,6 +48,15 @@ router.get('/students', authenticate, authorize(['admin', 'principal', 'accounta
         const where = { schoolId: schoolIdInt, status: 'active' };
         if (classId) where.classId = parseInt(classId);
 
+        // Section scope: restrict to allowed classes for sub-admins
+        if (req.allowedClassIds && req.allowedClassIds.length > 0) {
+          if (classId && !req.allowedClassIds.includes(parseInt(classId))) {
+            return res.json([]); // Requested class outside scope
+          }
+          if (!classId) where.classId = { in: req.allowedClassIds };
+        }
+
+
         students = await prisma.student.findMany({
           where,
           include: {
@@ -74,6 +83,15 @@ router.get('/students', authenticate, authorize(['admin', 'principal', 'accounta
           FeeRecord: { some: feeRecordFilter }
         };
         if (classInt) historicalWhere.classId = classInt;
+
+        // Section scope: restrict to allowed classes for sub-admins
+        if (req.allowedClassIds && req.allowedClassIds.length > 0) {
+          const scopeFilter = classInt
+            ? (req.allowedClassIds.includes(classInt) ? classInt : -1)
+            : { in: req.allowedClassIds };
+          activeWhere.classId = scopeFilter;
+          historicalWhere.classId = scopeFilter;
+        }
 
         students = await prisma.student.findMany({
           where: { OR: [activeWhere, historicalWhere] },

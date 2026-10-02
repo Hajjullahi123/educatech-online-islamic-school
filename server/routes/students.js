@@ -773,12 +773,24 @@ router.get('/', authenticate, async (req, res) => {
       where.classId = parseInt(classId);
     }
 
-    // Default to 'active' if no status is provided, 
+    // Default to 'active' if no status is provided,
     // but allow searching for others if explicitly requested
     if (status) {
       where.status = status;
     } else {
       where.status = 'active';
+    }
+
+    // Section scope: restrict to classes within the sub-admin's assigned sections
+    if (req.allowedClassIds && req.allowedClassIds.length > 0) {
+      if (classId) {
+        // Already filtering by classId — ensure it's within allowed scope
+        if (!req.allowedClassIds.includes(parseInt(classId))) {
+          return res.json([]); // Requested class outside their scope
+        }
+      } else {
+        where.classId = { in: req.allowedClassIds };
+      }
     }
 
     const students = await prisma.student.findMany({

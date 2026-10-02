@@ -72,6 +72,16 @@ router.get('/class/:classId', authenticate, authorize(['admin', 'sub_admin', 'te
       }
     }
 
+    // SECTION SCOPE CHECK: sub-admins with section restrictions
+    if (req.allowedClassIds && req.allowedClassIds.length > 0) {
+      if (!req.allowedClassIds.includes(parseInt(classId))) {
+        return res.status(403).json({
+          error: 'Access Denied',
+          message: 'This class is outside your assigned section scope.'
+        });
+      }
+    }
+
     // Default to today if no date provided, but consistently use UTC midnight
     const queryDate = date ? new Date(date) : new Date();
     if (!date) queryDate.setUTCHours(0, 0, 0, 0); 
@@ -583,6 +593,17 @@ router.get('/download', authenticate, authorize(['admin', 'sub_admin', 'teacher'
       }
     } else if (classId) {
       where.classId = parseInt(classId);
+    }
+
+    // SECTION SCOPE CHECK: sub-admins with section restrictions
+    if (req.allowedClassIds && req.allowedClassIds.length > 0) {
+      if (classId && !req.allowedClassIds.includes(parseInt(classId))) {
+        return res.status(403).json({ error: 'Access Denied: This class is outside your assigned section scope.' });
+      }
+      if (!classId) {
+        // Restrict download to their sections only
+        where.classId = { in: req.allowedClassIds };
+      }
     }
 
     if (termId) {
