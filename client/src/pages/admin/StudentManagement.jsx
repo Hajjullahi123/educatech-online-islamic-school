@@ -692,12 +692,21 @@ Note: Password must be changed on first login.
   });
 
   const getClassInfo = (classId) => {
-    if (classId === 'unassigned') {
+    if (classId === 'unassigned' || !classId) {
       return { name: 'Unassigned Students', arm: '', id: 'unassigned' };
     }
     // Convert classId to number if it's a string (from Object.keys())
     const numericClassId = typeof classId === 'string' && classId !== 'unassigned' ? parseInt(classId) : classId;
-    return classes.find(c => c.id === numericClassId) || { name: 'Unknown Class', arm: '', id: classId };
+    const foundClass = classes.find(c => c.id === numericClassId);
+    if (foundClass) return foundClass;
+
+    // Fallback: Check if any student object contains the classModel details returned from backend
+    const studentWithClass = students.find(s => (s.classId === numericClassId || s.classId === classId) && s.classModel);
+    if (studentWithClass && studentWithClass.classModel) {
+      return studentWithClass.classModel;
+    }
+
+    return { name: 'Unknown Class', arm: '', id: classId };
   };
 
   const grouped = groupedStudents();

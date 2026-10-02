@@ -934,6 +934,13 @@ router.post('/', authenticate, authorize(['admin', 'sub_admin', 'principal', 'ac
       return res.status(400).json({ error: 'First name, last name, and class are required' });
     }
 
+    // Section Scope check for sub-admin
+    if (req.user.role === 'sub_admin' && req.allowedClassIds && req.allowedClassIds.length > 0) {
+      if (!req.allowedClassIds.includes(parseInt(classId))) {
+        return res.status(403).json({ error: 'You are not authorized to add students to this class (outside your assigned section scope).' });
+      }
+    }
+
     // Fallback for parentGuardianName
     const effectiveParentName = parentGuardianName || `Mr. ${lastName}`;
 
@@ -1232,6 +1239,13 @@ router.put('/:id', authenticate, authorize(['admin', 'sub_admin', 'principal', '
     } = req.body;
 
     const studentId = parseInt(req.params.id);
+
+    // Section Scope check for sub-admin
+    if (req.user.role === 'sub_admin' && req.allowedClassIds && req.allowedClassIds.length > 0 && classId) {
+      if (!req.allowedClassIds.includes(parseInt(classId))) {
+        return res.status(403).json({ error: 'You are not authorized to move students to this class (outside your assigned section scope).' });
+      }
+    }
 
     const existingStudent = await prisma.student.findFirst({
       where: {

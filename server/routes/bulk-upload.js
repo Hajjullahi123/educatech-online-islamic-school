@@ -165,15 +165,23 @@ function addInstructionsSheet(workbook, templateType) {
 const upload = multer({ storage: storage });
 
 // Download Bulk Student Template (XLSX)
-router.get('/template/students', authenticate, authorize(['admin', 'teacher', 'principal']), async (req, res) => {
+router.get('/template/students', authenticate, authorize(['admin', 'teacher', 'principal', 'sub_admin']), async (req, res) => {
   try {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Students Template');
 
     // Get classes for ID reference - Using school-specific indexing
     const schoolIdInt = parseInt(req.schoolId) || 0;
+    const whereClass = { schoolId: schoolIdInt, isActive: true };
+
+    if (req.user.role === 'sub_admin' && req.allowedClassIds && req.allowedClassIds.length > 0) {
+      whereClass.id = { in: req.allowedClassIds };
+    } else if (req.user.role === 'sub_admin' && req.assignedSectionIds && req.assignedSectionIds.length > 0) {
+      whereClass.sectionId = { in: req.assignedSectionIds };
+    }
+
     const classes = await prisma.class.findMany({
-      where: { schoolId: schoolIdInt, isActive: true },
+      where: whereClass,
       orderBy: { id: 'asc' }, // Stable sort by creation order
       select: { id: true, name: true, arm: true }
     });
@@ -282,7 +290,7 @@ router.get('/template/students', authenticate, authorize(['admin', 'teacher', 'p
 });
 
 // Bulk upload students from file
-router.post('/upload', authenticate, authorize(['admin', 'teacher', 'principal']), upload.single('file'), async (req, res) => {
+router.post('/upload', authenticate, authorize(['admin', 'teacher', 'principal', 'sub_admin']), upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
@@ -406,7 +414,7 @@ router.post('/upload', authenticate, authorize(['admin', 'teacher', 'principal']
       });
     }
 
-    // Determine allowed class IDs if user is a teacher
+    // Determine allowed class IDs if user is a teacher or sub_admin
     let allowedClassIds = null;
     if (req.user.role === 'teacher') {
       const assignedClasses = await prisma.class.findMany({
@@ -414,6 +422,8 @@ router.post('/upload', authenticate, authorize(['admin', 'teacher', 'principal']
         select: { id: true }
       });
       allowedClassIds = new Set(assignedClasses.map(c => c.id));
+    } else if (req.user.role === 'sub_admin' && req.allowedClassIds && req.allowedClassIds.length > 0) {
+      allowedClassIds = new Set(req.allowedClassIds);
     }
 
     for (const studentData of studentsRaw) {
@@ -480,11 +490,11 @@ router.post('/upload', authenticate, authorize(['admin', 'teacher', 'principal']
 
         const classIdIntToUse = classInfo.id;
 
-        // Check permission for teacher
+        // Check permission for teacher / sub_admin
         if (allowedClassIds && !allowedClassIds.has(classIdIntToUse)) {
           results.failed.push({
             data: studentData,
-            error: `Unauthorized access to class: ${classInfo.name} ${classInfo.arm || ''}`
+            error: `Class "${classInfo.name} ${classInfo.arm || ''}" is outside your assigned section scope.`
           });
           continue;
         }
@@ -716,7 +726,7 @@ router.post('/upload', authenticate, authorize(['admin', 'teacher', 'principal']
 });
 
 // Bulk upload students from CSV data (JSON format - Legacy)
-router.post('/bulk-upload', authenticate, authorize(['admin', 'teacher', 'principal']), async (req, res) => {
+router.post('/bulk-upload', authenticate, authorize(['admin', 'teacher', 'principal', 'sub_admin']), async (req, res) => {
   try {
     const { students } = req.body;
 
@@ -954,7 +964,7 @@ router.post('/bulk-upload', authenticate, authorize(['admin', 'teacher', 'princi
 });
 
 // Bulk upload results from CSV data
-router.post('/results', authenticate, authorize(['admin', 'teacher', 'principal', 'examination_officer']), async (req, res) => {
+router.post('/results', authenticate, authorize(['admin', 'teacher', 'principal', 'examination_officer', 'sub_admin']), async (req, res) => {
   try {
     const { results, termId, academicSessionId, classId, subjectId } = req.body;
 

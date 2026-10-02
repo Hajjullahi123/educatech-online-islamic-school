@@ -415,8 +415,8 @@ router.post('/link-student', authenticate, authorize(['admin', 'principal', 'acc
   }
 });
 
-// 4. Get Parent Details (Admin/Principal)
-router.get('/', authenticate, authorize(['admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin']), async (req, res) => {
+// 4. Get Parent Details (Admin/Principal/Sub-Admin)
+router.get('/', authenticate, authorize(['admin', 'principal', 'accountant', 'examination_officer', 'attendance_admin', 'sub_admin']), async (req, res) => {
   try {
     const enhancedParents = await prisma.parent.findMany({
       where: { schoolId: req.schoolId },
@@ -445,8 +445,8 @@ router.get('/', authenticate, authorize(['admin', 'principal', 'accountant', 'ex
   }
 });
 
-// 5. Update Parent (Admin/Principal)
-router.put('/:id', authenticate, authorize(['admin', 'principal']), async (req, res) => {
+// 5. Update Parent (Admin/Principal/Sub-Admin)
+router.put('/:id', authenticate, authorize(['admin', 'principal', 'sub_admin']), async (req, res) => {
   try {
     const { id } = req.params;
     const { firstName, lastName, email, phone, address } = req.body;
