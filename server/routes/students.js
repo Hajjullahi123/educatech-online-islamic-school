@@ -782,14 +782,15 @@ router.get('/', authenticate, async (req, res) => {
     }
 
     // Section scope: restrict to classes within the sub-admin's assigned sections
-    if (req.allowedClassIds && req.allowedClassIds.length > 0) {
+    if (req.assignedSectionIds && req.assignedSectionIds.length > 0) {
+      const allowedIds = req.allowedClassIds || [];
       if (classId) {
         // Already filtering by classId — ensure it's within allowed scope
-        if (!req.allowedClassIds.includes(parseInt(classId))) {
+        if (!allowedIds.includes(parseInt(classId))) {
           return res.json([]); // Requested class outside their scope
         }
       } else {
-        where.classId = { in: req.allowedClassIds };
+        where.classId = { in: allowedIds };
       }
     }
 

@@ -106,50 +106,61 @@ const attachSectionScope = async (req, res, next) => {
 
       if (sectionAssignments && sectionAssignments.length > 0) {
         req.assignedSectionIds = sectionAssignments.map(a => a.sectionId);
-
         const sections = sectionAssignments.map(a => a.Section).filter(Boolean);
+
+        // 1. Fetch classes explicitly assigned to these section IDs
+        const linkedClasses = await prisma.class.findMany({
+          where: {
+            schoolId: req.schoolId,
+            sectionId: { in: req.assignedSectionIds }
+          },
+          select: { id: true, name: true, sectionId: true }
+        });
+
+        // 2. For unlinked classes (sectionId: null), check name/code matching and backfill
         const nameConditions = [];
         for (const sec of sections) {
           const secName = sec.name.trim();
-          nameConditions.push({ name: { startsWith: secName, mode: 'insensitive' } });
-          if (sec.code) {
+          if (secName.length >= 3) {
+            nameConditions.push({ name: { startsWith: secName, mode: 'insensitive' } });
+          }
+          if (sec.code && sec.code.trim().length >= 2) {
             const secCode = sec.code.trim();
             nameConditions.push({ name: { startsWith: secCode, mode: 'insensitive' } });
           }
         }
 
-        // Pre-fetch all class IDs within assigned sections (by direct sectionId OR name/code matching)
-        const classes = await prisma.class.findMany({
-          where: {
-            schoolId: req.schoolId,
-            OR: [
-              { sectionId: { in: req.assignedSectionIds } },
-              ...nameConditions
-            ]
-          },
-          select: { id: true, name: true, sectionId: true }
-        });
+        let unlinkedClasses = [];
+        if (nameConditions.length > 0) {
+          unlinkedClasses = await prisma.class.findMany({
+            where: {
+              schoolId: req.schoolId,
+              sectionId: null,
+              OR: nameConditions
+            },
+            select: { id: true, name: true, sectionId: true }
+          });
 
-        req.allowedClassIds  = classes.map(c => c.id);
-        req.allowedClassNames = classes.map(c => c.name);
-
-        // Auto-backfill: update class sectionId in DB if sectionId was null
-        const unlinked = classes.filter(c => !c.sectionId);
-        if (unlinked.length > 0) {
-          for (const cls of unlinked) {
-            const clsLower = cls.name.trim().toLowerCase();
-            const matchedSec = sections.find(s => 
-              clsLower.startsWith(s.name.trim().toLowerCase()) ||
-              (s.code && clsLower.startsWith(s.code.trim().toLowerCase()))
-            );
-            if (matchedSec) {
-              prisma.class.update({
-                where: { id: cls.id },
-                data: { sectionId: matchedSec.id }
-              }).catch(() => {});
+          if (unlinkedClasses.length > 0) {
+            for (const cls of unlinkedClasses) {
+              const clsLower = cls.name.trim().toLowerCase();
+              const matchedSec = sections.find(s => 
+                (s.name && s.name.trim().length >= 3 && clsLower.startsWith(s.name.trim().toLowerCase())) ||
+                (s.code && s.code.trim().length >= 2 && clsLower.startsWith(s.code.trim().toLowerCase()))
+              );
+              if (matchedSec) {
+                prisma.class.update({
+                  where: { id: cls.id },
+                  data: { sectionId: matchedSec.id }
+                }).catch(() => {});
+              }
             }
           }
         }
+
+        const allClasses = [...linkedClasses, ...unlinkedClasses];
+        req.allowedClassIds  = allClasses.map(c => c.id);
+        req.allowedClassNames = allClasses.map(c => c.name);
       }
     }
   } catch (err) {
