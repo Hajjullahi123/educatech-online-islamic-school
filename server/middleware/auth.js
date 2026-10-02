@@ -98,22 +98,58 @@ const attachSectionScope = async (req, res, next) => {
       const prisma = require('../db');
       const sectionAssignments = await prisma.sectionAdminAccess.findMany({
         where: { userId: req.user.id },
-        select: { sectionId: true }
+        select: {
+          sectionId: true,
+          Section: { select: { id: true, name: true, code: true } }
+        }
       });
 
       if (sectionAssignments && sectionAssignments.length > 0) {
         req.assignedSectionIds = sectionAssignments.map(a => a.sectionId);
 
-        // Pre-fetch all class IDs within the assigned sections
+        const sections = sectionAssignments.map(a => a.Section).filter(Boolean);
+        const nameConditions = [];
+        for (const sec of sections) {
+          const secName = sec.name.trim();
+          nameConditions.push({ name: { startsWith: secName, mode: 'insensitive' } });
+          if (sec.code) {
+            const secCode = sec.code.trim();
+            nameConditions.push({ name: { startsWith: secCode, mode: 'insensitive' } });
+          }
+        }
+
+        // Pre-fetch all class IDs within assigned sections (by direct sectionId OR name/code matching)
         const classes = await prisma.class.findMany({
           where: {
-            sectionId: { in: req.assignedSectionIds },
-            schoolId: req.schoolId
+            schoolId: req.schoolId,
+            OR: [
+              { sectionId: { in: req.assignedSectionIds } },
+              ...nameConditions
+            ]
           },
-          select: { id: true, name: true }
+          select: { id: true, name: true, sectionId: true }
         });
+
         req.allowedClassIds  = classes.map(c => c.id);
         req.allowedClassNames = classes.map(c => c.name);
+
+        // Auto-backfill: update class sectionId in DB if sectionId was null
+        const unlinked = classes.filter(c => !c.sectionId);
+        if (unlinked.length > 0) {
+          for (const cls of unlinked) {
+            const clsLower = cls.name.trim().toLowerCase();
+            const matchedSec = sections.find(s => 
+              clsLower.startsWith(s.name.trim().toLowerCase()) ||
+              (s.code && clsLower.startsWith(s.code.trim().toLowerCase()))
+            );
+            if (matchedSec) {
+              prisma.class.update({
+                where: { id: cls.id },
+                data: { sectionId: matchedSec.id }
+              }).catch(() => {});
+            }
+          }
+        }
       }
     }
   } catch (err) {

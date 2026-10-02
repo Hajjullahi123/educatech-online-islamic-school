@@ -87,9 +87,9 @@ const SubAdminDashboard = ({ user, schoolSettings }) => {
       let mySectionIds = null;
       if (assignmentsRes.ok) {
         const assignments = await assignmentsRes.json();
-        const mine = assignments.filter(a => a.User?.id === user.id);
+        const mine = assignments.filter(a => a.User?.id === user.id || a.userId === user.id);
         if (mine.length > 0) {
-          mySectionIds = mine.map(a => a.Section?.id);
+          mySectionIds = mine.map(a => a.Section?.id || a.sectionId).filter(Boolean);
         }
       }
 

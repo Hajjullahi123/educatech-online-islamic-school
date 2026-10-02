@@ -35,7 +35,11 @@ router.get('/', authenticate, async (req, res) => {
 
     // Section scope: restrict to classes within the sub-admin's assigned sections
     if (req.assignedSectionIds && req.assignedSectionIds.length > 0) {
-      where.sectionId = { in: req.assignedSectionIds };
+      if (req.allowedClassIds && req.allowedClassIds.length > 0) {
+        where.id = { in: req.allowedClassIds };
+      } else {
+        where.sectionId = { in: req.assignedSectionIds };
+      }
     }
 
     const classes = await prisma.class.findMany({

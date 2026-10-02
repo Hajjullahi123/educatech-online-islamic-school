@@ -26,11 +26,47 @@ async function ensureDefaultSections(schoolId) {
   }
 }
 
+// Auto-link unassigned classes (sectionId == null) to matching section by name/code prefix
+async function linkClassesToSections(schoolId) {
+  try {
+    const unlinkedClasses = await prisma.class.findMany({
+      where: { schoolId, sectionId: null }
+    });
+
+    if (unlinkedClasses.length > 0) {
+      const sections = await prisma.section.findMany({
+        where: { schoolId }
+      });
+
+      for (const cls of unlinkedClasses) {
+        const clsNameLower = cls.name.trim().toLowerCase();
+        const matchedSec = sections.find(s => {
+          const secNameLower = s.name.trim().toLowerCase();
+          const secCodeLower = s.code ? s.code.trim().toLowerCase() : '';
+          return clsNameLower.startsWith(secNameLower) || 
+                 (secCodeLower && clsNameLower.startsWith(secCodeLower)) ||
+                 clsNameLower.includes(secNameLower);
+        });
+
+        if (matchedSec) {
+          await prisma.class.update({
+            where: { id: cls.id },
+            data: { sectionId: matchedSec.id }
+          }).catch(() => {});
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[Sections] Error auto-linking classes:', err);
+  }
+}
+
 // GET /api/sections - List all sections for the school
 router.get('/', authenticate, async (req, res) => {
   try {
     const schoolIdInt = parseInt(req.schoolId);
     await ensureDefaultSections(schoolIdInt);
+    await linkClassesToSections(schoolIdInt);
 
     const sections = await prisma.section.findMany({
       where: { schoolId: schoolIdInt },
@@ -211,7 +247,7 @@ router.post('/assign-classes', authenticate, authorize(['admin', 'principal', 's
 });
 
 // GET /api/sections/admin-assignments - Get section assignments for sub-admins
-router.get('/admin-assignments', authenticate, authorize(['admin', 'principal', 'superadmin']), async (req, res) => {
+router.get('/admin-assignments', authenticate, authorize(['admin', 'sub_admin', 'principal', 'superadmin']), async (req, res) => {
   try {
     const schoolIdInt = parseInt(req.schoolId);
     const assignments = await prisma.sectionAdminAccess.findMany({
