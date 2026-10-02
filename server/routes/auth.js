@@ -1156,7 +1156,7 @@ router.post('/reset-password', authenticate, authorize(['admin', 'principal']), 
  * @desc    Admin impersonate a user account (Ghost Login)
  * @access  Private (Admin/Superadmin only)
  */
-router.post('/impersonate', authenticate, authorize(['admin', 'principal', 'superadmin']), async (req, res) => {
+router.post('/impersonate', authenticate, authorize(['admin', 'sub_admin', 'principal', 'superadmin']), async (req, res) => {
   try {
     const { targetUserId } = req.body;
     
@@ -1177,9 +1177,42 @@ router.post('/impersonate', authenticate, authorize(['admin', 'principal', 'supe
       return res.status(403).json({ error: 'Cannot impersonate a superadmin' });
     }
 
+    // Sub-admins cannot impersonate administrative accounts
+    if (req.user.role === 'sub_admin' && ['admin', 'sub_admin', 'principal', 'superadmin'].includes(targetUser.role)) {
+      return res.status(403).json({ error: 'Sub-admins cannot log in to administrative accounts' });
+    }
+
     // Only allow impersonating users in the same school (superadmin can bypass)
     if (req.user.role !== 'superadmin' && targetUser.schoolId !== req.user.schoolId) {
       return res.status(403).json({ error: 'Cannot impersonate users from other schools' });
+    }
+
+    // Section Scope Check for Sub-Admins
+    if (req.user.role === 'sub_admin' && req.allowedClassIds && req.allowedClassIds.length > 0) {
+      let isAllowed = false;
+      if (targetUser.role === 'student') {
+        const student = await prisma.student.findUnique({ where: { userId: targetUser.id } });
+        isAllowed = student && req.allowedClassIds.includes(student.classId);
+      } else if (targetUser.role === 'parent') {
+        const parent = await prisma.parent.findUnique({ where: { userId: targetUser.id } });
+        if (parent) {
+          const parentWards = await prisma.student.findMany({
+            where: { parentId: parent.id },
+            select: { classId: true }
+          });
+          isAllowed = parentWards.some(w => w.classId && req.allowedClassIds.includes(w.classId));
+        }
+      } else if (targetUser.role === 'teacher') {
+        const [classCount, assignmentCount] = await Promise.all([
+          prisma.class.count({ where: { classTeacherId: targetUser.id, id: { in: req.allowedClassIds } } }),
+          prisma.teacherAssignment.count({ where: { teacherId: targetUser.id, classSubject: { classId: { in: req.allowedClassIds } } } })
+        ]);
+        isAllowed = classCount > 0 || assignmentCount > 0;
+      }
+
+      if (!isAllowed) {
+        return res.status(403).json({ error: 'Sub-admins cannot log in to accounts outside their assigned section scope.' });
+      }
     }
 
     const fullUser = await getFullUserPayload(targetUser.id, targetUser.schoolId, targetUser.role);

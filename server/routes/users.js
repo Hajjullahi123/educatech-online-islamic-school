@@ -557,6 +557,31 @@ router.put('/:id', authenticate, authorize(['admin', 'sub_admin', 'principal', '
           error: 'Sub-admins are not authorized to modify Sub Admin, Principal, or Admin accounts.'
         });
       }
+
+      // Check section scoping if restricted
+      if (req.allowedClassIds && req.allowedClassIds.length > 0 && user.id !== req.user.id) {
+        let isAllowed = false;
+        if (user.role === 'student' || user.student) {
+          isAllowed = user.student && req.allowedClassIds.includes(user.student.classId);
+        } else if (user.role === 'parent' || user.Parent) {
+          const parentWards = await prisma.student.findMany({
+            where: { parentId: user.Parent?.id || -1 },
+            select: { classId: true }
+          });
+          isAllowed = parentWards.some(w => w.classId && req.allowedClassIds.includes(w.classId));
+        } else if (user.role === 'teacher' || user.teacher) {
+          const [classCount, assignmentCount] = await Promise.all([
+            prisma.class.count({ where: { classTeacherId: user.id, id: { in: req.allowedClassIds } } }),
+            prisma.teacherAssignment.count({ where: { teacherId: user.id, classSubject: { classId: { in: req.allowedClassIds } } } })
+          ]);
+          isAllowed = classCount > 0 || assignmentCount > 0;
+        }
+        if (!isAllowed) {
+          return res.status(403).json({
+            error: 'Sub-admins are not authorized to modify accounts outside their assigned section scope.'
+          });
+        }
+      }
     }
 
     // Build update data
@@ -846,11 +871,37 @@ router.delete('/:id', authenticate, authorize(['admin', 'sub_admin', 'principal'
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Prevent sub_admins from deleting administrative/sub-admin accounts
-    if (req.user && req.user.role === 'sub_admin' && ['admin', 'sub_admin', 'principal', 'superadmin'].includes(user.role)) {
-      return res.status(403).json({
-        error: 'Sub-admins are not authorized to delete Sub Admin, Principal, or Admin accounts.'
-      });
+    // Prevent sub_admins from deleting administrative/sub-admin accounts or users outside section scope
+    if (req.user && req.user.role === 'sub_admin') {
+      if (['admin', 'sub_admin', 'principal', 'superadmin'].includes(user.role)) {
+        return res.status(403).json({
+          error: 'Sub-admins are not authorized to delete Sub Admin, Principal, or Admin accounts.'
+        });
+      }
+
+      if (req.allowedClassIds && req.allowedClassIds.length > 0) {
+        let isAllowed = false;
+        if (user.role === 'student' || user.student) {
+          isAllowed = user.student && req.allowedClassIds.includes(user.student.classId);
+        } else if (user.role === 'parent' || user.Parent) {
+          const parentWards = await prisma.student.findMany({
+            where: { parentId: user.Parent?.id || -1 },
+            select: { classId: true }
+          });
+          isAllowed = parentWards.some(w => w.classId && req.allowedClassIds.includes(w.classId));
+        } else if (user.role === 'teacher' || user.teacher) {
+          const [classCount, assignmentCount] = await Promise.all([
+            prisma.class.count({ where: { classTeacherId: user.id, id: { in: req.allowedClassIds } } }),
+            prisma.teacherAssignment.count({ where: { teacherId: user.id, classSubject: { classId: { in: req.allowedClassIds } } } })
+          ]);
+          isAllowed = classCount > 0 || assignmentCount > 0;
+        }
+        if (!isAllowed) {
+          return res.status(403).json({
+            error: 'Sub-admins are not authorized to delete accounts outside their assigned section scope.'
+          });
+        }
+      }
     }
 
     // Server-side safety guard for teachers with dependencies
