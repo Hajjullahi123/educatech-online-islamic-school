@@ -19,6 +19,7 @@ const DashboardShimmer = () => (
 // Lazy-load individual dashboard experiences
 const StudentDashboard = lazyRetry(() => import('./dashboards/StudentDashboard'));
 const AdminTeacherDashboard = lazyRetry(() => import('./dashboards/AdminTeacherDashboard'));
+const SubAdminDashboard = lazyRetry(() => import('./dashboards/SubAdminDashboard'));
 const AccountantDashboard = lazyRetry(() => import('./dashboards/AccountantDashboard'));
 const ParentDashboardWrapper = lazyRetry(() => import('./dashboards/ParentDashboardWrapper'));
 
@@ -80,8 +81,12 @@ const Dashboard = () => {
           <StudentDashboard user={user} currentTerm={currentTerm} currentSession={currentSession} />
         )}
         
-        {['admin', 'sub_admin', 'principal', 'teacher', 'attendance_admin', 'examination_officer'].includes(user?.role) && (
+        {['admin', 'principal', 'teacher', 'attendance_admin', 'examination_officer'].includes(user?.role) && (
           <AdminTeacherDashboard user={user} schoolSettings={schoolSettings} />
+        )}
+
+        {user?.role === 'sub_admin' && (
+          <SubAdminDashboard user={user} schoolSettings={schoolSettings} />
         )}
 
         {user?.role === 'accountant' && (
