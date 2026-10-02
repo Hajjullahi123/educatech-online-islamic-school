@@ -10,55 +10,67 @@ const { loginSchema, identifySchema, changePasswordSchema, resetPasswordSchema }
 
 // Helper to construct the unified, rich user object returned during login & /me sessions
 const getFullUserPayload = async (userId, schoolId, role) => {
-  // Build a minimal select to avoid loading heavy JSON columns (gradingSystem etc.)
-  const schoolSelect = {
-    id: true, slug: true, name: true, logoUrl: true,
-    motto: true, isActivated: true, packageType: true
-  };
-
-  // Role-specific includes — only what's actually needed
-  let include = { school: { select: schoolSelect } };
-  if (role === 'teacher' || role === 'principal') {
-    include.teacher = { select: { id: true, staffId: true, specialization: true, photoUrl: true } };
-    include.classesAsTeacher = { select: { id: true, name: true, arm: true } };
-  } else if (role === 'student') {
-    include.student = {
-      select: {
-        id: true, admissionNumber: true, photoUrl: true, classId: true,
-        classModel: { 
-          select: { 
-            id: true, name: true, arm: true,
-            classTeacher: {
-              select: {
-                firstName: true,
-                lastName: true,
-                signatureUrl: true
-              }
-            }
-          } 
-        }
-      }
+  try {
+    // Build a minimal select to avoid loading heavy JSON columns (gradingSystem etc.)
+    const schoolSelect = {
+      id: true, slug: true, name: true, logoUrl: true,
+      motto: true, isActivated: true, packageType: true
     };
-  } else if (role === 'parent') {
-    include.Parent = {
-      include: {
-        parentChildren: {
-          include: {
-            user: { select: { firstName: true, lastName: true, photoUrl: true } },
-            classModel: {
-              include: {
-                classTeacher: {
-                  select: {
-                    firstName: true,
-                    lastName: true,
-                    phone: true,
-                    photoUrl: true,
-                    username: true,
-                    teacher: {
-                      select: {
-                        publicPhone: true,
-                        publicEmail: true,
-                        publicWhatsapp: true
+
+    // Role-specific includes — only what's actually needed
+    let include = { school: { select: schoolSelect } };
+    if (role === 'teacher' || role === 'principal') {
+      include.teacher = { select: { id: true, staffId: true, specialization: true, photoUrl: true } };
+      include.classesAsTeacher = { select: { id: true, name: true, arm: true } };
+    } else if (role === 'student') {
+      include.student = {
+        select: {
+          id: true, admissionNumber: true, photoUrl: true, classId: true,
+          classModel: { 
+            select: { 
+              id: true, name: true, arm: true,
+              classTeacher: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                  signatureUrl: true
+                }
+              }
+            } 
+          }
+        }
+      };
+    } else if (role === 'parent') {
+      include.Parent = {
+        select: {
+          id: true,
+          phone: true,
+          address: true,
+          parentChildren: {
+            select: {
+              id: true,
+              name: true,
+              admissionNumber: true,
+              photoUrl: true,
+              user: { select: { firstName: true, lastName: true, photoUrl: true } },
+              classModel: {
+                select: {
+                  id: true,
+                  name: true,
+                  arm: true,
+                  classTeacher: {
+                    select: {
+                      firstName: true,
+                      lastName: true,
+                      phone: true,
+                      photoUrl: true,
+                      username: true,
+                      teacher: {
+                        select: {
+                          publicPhone: true,
+                          publicEmail: true,
+                          publicWhatsapp: true
+                        }
                       }
                     }
                   }
@@ -67,146 +79,186 @@ const getFullUserPayload = async (userId, schoolId, role) => {
             }
           }
         }
-      }
-    };
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true, username: true, role: true, schoolId: true,
-      firstName: true, lastName: true, email: true,
-      signatureUrl: true, mustChangePassword: true, photoUrl: true,
-      permissions: true,
-      departmentAsHead: { select: { id: true, name: true } },
-      ...include
+      };
     }
-  });
 
-  if (!user) return null;
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true, username: true, role: true, schoolId: true,
+        firstName: true, lastName: true, email: true,
+        signatureUrl: true, mustChangePassword: true, photoUrl: true,
+        permissions: true,
+        departmentAsHead: { select: { id: true, name: true } },
+        ...include
+      }
+    });
 
-  // Perform essential lookups in parallel
-  const [unreadCount, formMasterClass, hasQuranAccess, unassignedClasses] = await Promise.all([
-    // Unread message count
-    prisma.parentTeacherMessage.count({
-      where: { receiverId: userId, isRead: false, schoolId: schoolId || undefined }
-    }),
-    // Form Master check
-    ['teacher', 'principal'].includes(role) ? prisma.class.findFirst({
-      where: { classTeacherId: userId, schoolId: schoolId || undefined },
-      select: { id: true, name: true }
-    }) : null,
-    // Quran access check
-    (async () => {
-      if (role === 'admin' || role === 'principal' || role === 'superadmin') return true;
-      
-      const studentClassId = user?.student?.classId || user?.student?.classModel?.id;
-      
-      if (role === 'teacher') {
-        if (user.departmentAsHead) {
-          const deptName = user.departmentAsHead.name.toLowerCase();
-          if (deptName.includes('quran') || deptName.includes("qur'an")) {
-            return true;
-          }
-        }
+    if (!user) return null;
 
-        const quranAssignment = await prisma.teacherAssignment.findFirst({
-          where: {
-            teacherId: userId,
-            schoolId: schoolId || undefined,
-            classSubject: {
-              subject: {
-                OR: [
-                  { name: { contains: 'quran', mode: 'insensitive' } },
-                  { name: { contains: "qur'an", mode: 'insensitive' } }
-                ]
+    // Perform essential lookups in parallel
+    const [unreadCount, formMasterClass, hasQuranAccess, unassignedClasses] = await Promise.all([
+      // Unread message count
+      prisma.parentTeacherMessage.count({
+        where: { receiverId: userId, isRead: false, schoolId: schoolId || undefined }
+      }).catch(() => 0),
+      // Form Master check
+      ['teacher', 'principal'].includes(role) ? prisma.class.findFirst({
+        where: { classTeacherId: userId, schoolId: schoolId || undefined },
+        select: { id: true, name: true }
+      }).catch(() => null) : null,
+      // Quran access check
+      (async () => {
+        try {
+          if (role === 'admin' || role === 'principal' || role === 'superadmin') return true;
+          
+          const studentClassId = user?.student?.classId || user?.student?.classModel?.id;
+          
+          if (role === 'teacher') {
+            if (user.departmentAsHead) {
+              const deptName = user.departmentAsHead.name.toLowerCase();
+              if (deptName.includes('quran') || deptName.includes("qur'an")) {
+                return true;
               }
             }
-          },
-          select: { id: true }
-        });
-        
-        return !!quranAssignment;
-      }
-      
-      if (role === 'student' && studentClassId) {
-        const quranSubject = await prisma.classSubject.findFirst({
-          where: {
-            classId: studentClassId,
-            schoolId: schoolId || undefined,
-            subject: {
-              name: { contains: 'quran', mode: 'insensitive' }
-            }
-          },
-          select: { id: true }
-        });
 
-        if (!quranSubject && studentClassId) {
-           const quranAltSubject = await prisma.classSubject.findFirst({
+            const quranAssignment = await prisma.teacherAssignment.findFirst({
+              where: {
+                teacherId: userId,
+                schoolId: schoolId || undefined,
+                classSubject: {
+                  subject: {
+                    OR: [
+                      { name: { contains: 'quran', mode: 'insensitive' } },
+                      { name: { contains: "qur'an", mode: 'insensitive' } }
+                    ]
+                  }
+                }
+              },
+              select: { id: true }
+            }).catch(() => null);
+            
+            return !!quranAssignment;
+          }
+          
+          if (role === 'student' && studentClassId) {
+            const quranSubject = await prisma.classSubject.findFirst({
               where: {
                 classId: studentClassId,
                 schoolId: schoolId || undefined,
                 subject: {
-                  name: { contains: "qur'an", mode: 'insensitive' }
+                  name: { contains: 'quran', mode: 'insensitive' }
                 }
               },
               select: { id: true }
-           });
-           return !!quranAltSubject;
+            }).catch(() => null);
+
+            if (!quranSubject && studentClassId) {
+               const quranAltSubject = await prisma.classSubject.findFirst({
+                  where: {
+                    classId: studentClassId,
+                    schoolId: schoolId || undefined,
+                    subject: {
+                      name: { contains: "qur'an", mode: 'insensitive' }
+                    }
+                  },
+                  select: { id: true }
+               }).catch(() => null);
+               return !!quranAltSubject;
+            }
+            return !!quranSubject;
+          }
+        } catch (e) {
+          console.warn('[Auth] Quran access check failed:', e);
         }
-        return !!quranSubject;
+        return false;
+      })(),
+      // Unassigned classes for examination officer
+      role === 'examination_officer' ? prisma.class.findMany({
+        where: {
+          schoolId: schoolId || undefined,
+          isActive: true,
+          classTeacherId: null
+        },
+        select: { id: true, name: true, arm: true },
+        orderBy: [{ name: 'asc' }, { arm: 'asc' }]
+      }).catch(() => []) : null
+    ]);
+
+    const parentProfile = user.Parent ? {
+      id: user.Parent.id,
+      phone: user.Parent.phone,
+      address: user.Parent.address,
+      students: (user.Parent.parentChildren || []).map(s => ({
+        ...s,
+        displayName: s.user ? `${s.user.firstName || ''} ${s.user.lastName || ''}`.trim() : (s.name || s.admissionNumber)
+      }))
+    } : null;
+
+    return {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      schoolId: user.schoolId,
+      schoolSlug: user.school?.slug,
+      schoolLogo: user.school?.logoUrl,
+      schoolName: user.school?.name,
+      schoolMotto: user.school?.motto,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      signatureUrl: user.signatureUrl,
+      mustChangePassword: user.mustChangePassword,
+      teacher: user.teacher,
+      student: user.student,
+      parent: parentProfile,
+      classesAsTeacher: user.classesAsTeacher,
+      photoUrl: user.photoUrl,
+      unreadMessageCount: unreadCount,
+      isFormMaster: !!formMasterClass || (role === 'examination_officer' && unassignedClasses && unassignedClasses.length > 0),
+      formMasterClass: formMasterClass || (unassignedClasses && unassignedClasses.length > 0 ? unassignedClasses[0] : null),
+      unassignedClasses: unassignedClasses || [],
+      hasQuranAccess: hasQuranAccess,
+      departmentAsHead: user.departmentAsHead,
+      permissions: user.permissions || []
+    };
+  } catch (err) {
+    console.error('[Auth] Failed to generate full user payload, returning fallback:', err);
+    // Return basic user info so user can still log in even if complex joins fail
+    const fallbackUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true, username: true, role: true, schoolId: true,
+        firstName: true, lastName: true, email: true,
+        signatureUrl: true, mustChangePassword: true, photoUrl: true,
+        school: { select: { slug: true, name: true, logoUrl: true } }
       }
-      return false;
-    })(),
-    // Unassigned classes for examination officer
-    role === 'examination_officer' ? prisma.class.findMany({
-      where: {
-        schoolId: schoolId || undefined,
-        isActive: true,
-        classTeacherId: null
-      },
-      select: { id: true, name: true, arm: true },
-      orderBy: [{ name: 'asc' }, { arm: 'asc' }]
-    }) : null
-  ]);
+    }).catch(() => null);
 
-  const parentProfile = user.Parent ? {
-    id: user.Parent.id,
-    phone: user.Parent.phone,
-    address: user.Parent.address,
-    students: (user.Parent.parentChildren || []).map(s => ({
-      ...s,
-      displayName: s.user ? `${s.user.firstName || ''} ${s.user.lastName || ''}`.trim() : (s.name || s.admissionNumber)
-    }))
-  } : null;
+    if (!fallbackUser) return null;
 
-  return {
-    id: user.id,
-    username: user.username,
-    role: user.role,
-    schoolId: user.schoolId,
-    schoolSlug: user.school?.slug,
-    schoolLogo: user.school?.logoUrl,
-    schoolName: user.school?.name,
-    schoolMotto: user.school?.motto,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    email: user.email,
-    signatureUrl: user.signatureUrl,
-    mustChangePassword: user.mustChangePassword,
-    teacher: user.teacher,
-    student: user.student,
-    parent: parentProfile,
-    classesAsTeacher: user.classesAsTeacher,
-    photoUrl: user.photoUrl,
-    unreadMessageCount: unreadCount,
-    isFormMaster: !!formMasterClass || (role === 'examination_officer' && unassignedClasses && unassignedClasses.length > 0),
-    formMasterClass: formMasterClass || (unassignedClasses && unassignedClasses.length > 0 ? unassignedClasses[0] : null),
-    unassignedClasses: unassignedClasses || [],
-    hasQuranAccess: hasQuranAccess,
-    departmentAsHead: user.departmentAsHead,
-    permissions: user.permissions || []
-  };
+    return {
+      id: fallbackUser.id,
+      username: fallbackUser.username,
+      role: fallbackUser.role,
+      schoolId: fallbackUser.schoolId,
+      schoolSlug: fallbackUser.school?.slug,
+      schoolLogo: fallbackUser.school?.logoUrl,
+      schoolName: fallbackUser.school?.name,
+      firstName: fallbackUser.firstName,
+      lastName: fallbackUser.lastName,
+      email: fallbackUser.email,
+      signatureUrl: fallbackUser.signatureUrl,
+      mustChangePassword: fallbackUser.mustChangePassword,
+      photoUrl: fallbackUser.photoUrl,
+      unreadMessageCount: 0,
+      isFormMaster: false,
+      formMasterClass: null,
+      unassignedClasses: [],
+      hasQuranAccess: false,
+      permissions: []
+    };
+  }
 };// Helper to construct normalized identifier variations (slash vs dash, spaces, leading zeros, 2-digit/4-digit years, and sub-segments)
 const getIdentifierVariants = (rawIdentifier) => {
   if (!rawIdentifier || typeof rawIdentifier !== 'string') return [];
@@ -898,8 +950,9 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     }
 
     // Performance Optimization: If the hash uses 12 rounds (slow in JS), re-hash to 8 for speed
-    if (user.passwordHash.startsWith('$2a$12$') || user.passwordHash.startsWith('$2b$12$') || 
-        user.passwordHash.startsWith('$2a$10$') || user.passwordHash.startsWith('$2b$10$')) {
+    if (user.passwordHash && typeof user.passwordHash === 'string' && (
+        user.passwordHash.startsWith('$2a$12$') || user.passwordHash.startsWith('$2b$12$') || 
+        user.passwordHash.startsWith('$2a$10$') || user.passwordHash.startsWith('$2b$10$'))) {
       try {
         const newHash = await bcrypt.hash(password, 8);
         await prisma.user.update({
@@ -935,14 +988,18 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     });
 
     // Log login success here (Moved from /me for better performance)
-    logAction({
-      schoolId: user.schoolId || 1,
-      userId: user.id,
-      action: 'LOGIN',
-      resource: 'USER',
-      details: { username: user.username, role: user.role, method: 'credentials' },
-      ipAddress: req.ip
-    });
+    try {
+      logAction({
+        schoolId: user.schoolId || 1,
+        userId: user.id,
+        action: 'LOGIN',
+        resource: 'USER',
+        details: { username: user.username, role: user.role, method: 'credentials' },
+        ipAddress: req.ip
+      });
+    } catch (e) {
+      console.error('[Auth] Failed to log action:', e);
+    }
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Login failed' });
