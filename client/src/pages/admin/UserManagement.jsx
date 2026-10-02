@@ -79,7 +79,12 @@ const UserManagement = () => {
     const roleParam = params.get('role');
     if (roleParam) {
       setFilter(roleParam);
-      setExpandedRoles(prev => ({ ...prev, [roleParam]: true }));
+      // For the 'staff' group, expand all admin-type role sections
+      if (roleParam === 'staff') {
+        setExpandedRoles(prev => ({ ...prev, admin: true, sub_admin: true, principal: true, examination_officer: true, attendance_admin: true, accountant: true }));
+      } else {
+        setExpandedRoles(prev => ({ ...prev, [roleParam]: true }));
+      }
     }
   }, [location.search]);
 
@@ -489,6 +494,7 @@ const UserManagement = () => {
           onChange={(e) => setFilter(e.target.value)}
         >
           <option value="all">Global Catalog</option>
+          <option value="staff">Admin Staff</option>
           <option value="admin">Administrators</option>
           <option value="sub_admin">Sub Admins</option>
           <option value="examination_officer">Exam Officers</option>
@@ -509,16 +515,19 @@ const UserManagement = () => {
           </div>
         ) : (
           ['admin', 'sub_admin', 'examination_officer', 'attendance_admin', 'principal', 'teacher', 'higher_student', 'accountant', 'parent', 'student'].map(role => {
+            const ADMIN_STAFF_ROLES = ['admin', 'sub_admin', 'examination_officer', 'attendance_admin', 'principal', 'accountant'];
             const usersInRole = filteredUsers.filter(u => {
               if (role === 'parent') {
                 return u.role === 'parent' || u.parent;
               }
               return u.role === role;
             });
-            if (filter !== 'all' && filter !== role) return null;
-            if (usersInRole.length === 0 && filter !== role) return null;
+            // 'staff' filter shows all admin-type roles
+            if (filter === 'staff' && !ADMIN_STAFF_ROLES.includes(role)) return null;
+            if (filter !== 'all' && filter !== 'staff' && filter !== role) return null;
+            if (usersInRole.length === 0 && filter !== role && !(filter === 'staff' && ADMIN_STAFF_ROLES.includes(role))) return null;
 
-            const isExpanded = expandedRoles[role] || (filter !== 'all' && filter === role);
+            const isExpanded = expandedRoles[role] || (filter !== 'all' && filter === role) || (filter === 'staff' && ADMIN_STAFF_ROLES.includes(role));
 
             return (
               <div key={role} className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 transition-all hover:shadow-2xl">
